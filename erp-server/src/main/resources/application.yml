@@ -1,0 +1,58 @@
+server:
+  port: 8487
+
+spring:
+  application:
+    name: erp-server
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/erp?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
+    username: root
+    password: duan123
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+    default-property-inclusion: non_null
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+jwt:
+  header: Authorization
+  token-prefix: "Bearer "
+  secret: erp-management-system-default-jwt-secret-key-2026
+  expire-hours: 24
+
+springdoc:
+  swagger-ui:
+    path: /doc.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+
+
+
+
+
+
+
