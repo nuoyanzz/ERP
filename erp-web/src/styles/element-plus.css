@@ -1,0 +1,58 @@
+/* ============================================================
+   Element Plus 主题覆盖
+   ============================================================ */
+
+:root {
+  --el-color-primary: #2563eb;
+  --el-color-primary-light-3: #4f83ee;
+  --el-color-primary-light-5: #7aa4f2;
+  --el-color-primary-light-7: #a5c4f6;
+  --el-color-primary-light-8: #c2d6f9;
+  --el-color-primary-light-9: #e1ebfc;
+  --el-color-primary-dark-2: #1d4fd0;
+
+  --el-border-radius-base: 6px;
+  --el-font-size-base: 14px;
+}
+
+/* 卡片与表格保持一致的圆角与边框 */
+.el-card {
+  border-radius: 8px;
+  border-color: var(--el-border-color-lighter);
+}
+
+.el-card__header {
+  padding: 14px 18px;
+  font-weight: 500;
+}
+
+.el-card__body {
+  padding: 16px 18px;
+}
+
+.el-table th.el-table__cell {
+  background-color: var(--el-fill-color-light);
+  font-weight: 500;
+}
+
+.el-table .cell {
+  line-height: 1.5;
+}
+
+/* 工具栏里的表单项间距紧凑一些 */
+.toolbar-form .el-form-item__label {
+  color: var(--el-text-color-regular);
+}
+
+/* 弹窗里的明细表格更紧凑 */
+.el-dialog .el-table .cell {
+  padding: 0 8px;
+}
+
+
+
+
+
+
+
+
