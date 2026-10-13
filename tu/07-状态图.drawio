@@ -1,0 +1,44 @@
+<mxfile host="app.diagrams.net" modified="2026-10-12T00:00:00.000Z" agent="kilo" version="24.7.17" etag="erp-diagram-v1" type="device">
+  <diagram id="c27" name="状态图">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c1" value="采购订单 · 状态机图（State Machine Diagram）" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=18;strokeColor=none;fillColor=none;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="40" y="14" width="900" height="30" as="geometry" /></mxCell>
+        <mxCell id="c2" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="120" y="120" width="16" height="16" as="geometry" /></mxCell>
+        <mxCell id="c3" value="草稿" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=center;verticalAlign=middle;fontSize=12;" vertex="1" parent="1"><mxGeometry x="200" y="96" width="130" height="48" as="geometry" /></mxCell>
+        <mxCell id="c4" value="待审核" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=center;verticalAlign=middle;fontSize=12;" vertex="1" parent="1"><mxGeometry x="430" y="96" width="130" height="48" as="geometry" /></mxCell>
+        <mxCell id="c5" value="已确认" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=center;verticalAlign=middle;fontSize=12;" vertex="1" parent="1"><mxGeometry x="660" y="96" width="130" height="48" as="geometry" /></mxCell>
+        <mxCell id="c6" value="执行中" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=center;verticalAlign=middle;fontSize=12;" vertex="1" parent="1"><mxGeometry x="890" y="96" width="150" height="48" as="geometry" /></mxCell>
+        <mxCell id="c7" value="已完成" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=center;verticalAlign=middle;fontSize=12;" vertex="1" parent="1"><mxGeometry x="1140" y="96" width="130" height="48" as="geometry" /></mxCell>
+        <mxCell id="c8" value="" style="ellipse;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="1300" y="120" width="16" height="16" as="geometry" /></mxCell>
+        <mxCell id="c9" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="1303" y="123" width="10" height="10" as="geometry" /></mxCell>
+        <mxCell id="c10" value="已关闭" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=center;verticalAlign=middle;fontSize=12;" vertex="1" parent="1"><mxGeometry x="890" y="300" width="130" height="48" as="geometry" /></mxCell>
+        <mxCell id="c11" value="已作废" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=center;verticalAlign=middle;fontSize=12;" vertex="1" parent="1"><mxGeometry x="200" y="300" width="130" height="48" as="geometry" /></mxCell>
+        <mxCell id="c12" value="" style="ellipse;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="1150" y="320" width="16" height="16" as="geometry" /></mxCell>
+        <mxCell id="c13" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="1153" y="323" width="10" height="10" as="geometry" /></mxCell>
+        <mxCell id="c14" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="c2" target="c3"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c15" value="提交" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="c3" target="c4"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c16" value="审核通过" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="c4" target="c5"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c17" value="驳回修改" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="c4" target="c3"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="495" y="215"/><mxPoint x="265" y="215"/></Array></mxGeometry></mxCell>
+        <mxCell id="c18" value="部分到货" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="c5" target="c6"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c19" value="全部到货并审核" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="c6" target="c7"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c20" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="c7" target="c9"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c21" value="协商终止 [存在未完结数量]" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="c5" target="c10"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="790" y="120"/><mxPoint x="790" y="324"/><mxPoint x="890" y="324"/></Array></mxGeometry></mxCell>
+        <mxCell id="c22" value="强制关闭" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="c6" target="c10"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c23" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="c10" target="c13"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c24" value="作废" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="c3" target="c11"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c25" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=1;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="c11" target="c13"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c26" value="说明：初始状态（实心圆）与最终状态（圆中实心圆）；方括号 [ ] 内为转移守卫条件；状态机驱动采购订单全生命周期。" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#555555;strokeColor=none;fillColor=none;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="40" y="420" width="1000" height="18" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+
+
+
+
+
+
+
+
