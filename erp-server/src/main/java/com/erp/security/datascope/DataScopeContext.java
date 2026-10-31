@@ -12,6 +12,15 @@ public final class DataScopeContext {
 
     private static final ThreadLocal<DataScopeInfo> HOLDER = new ThreadLocal<>();
 
+    /**
+     * 数据权限忽略标记。
+     * <p>
+     * 取业务单号（如查「本月最大单号序号」）属于系统级约束查询，
+     * 单号要求全库唯一，不能被部门数据范围裁剪，否则不同部门会取到相同序号导致唯一键冲突。
+     * 此处临时置位，让拦截器跳过改写。
+     */
+    private static final ThreadLocal<Boolean> IGNORED = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
     private DataScopeContext() {
     }
 
@@ -25,6 +34,30 @@ public final class DataScopeContext {
 
     public static void clear() {
         HOLDER.remove();
+        IGNORED.remove();
+    }
+
+    /**
+     * 当前是否忽略数据权限。
+     */
+    public static boolean isIgnored() {
+        return Boolean.TRUE.equals(IGNORED.get());
+    }
+
+    /**
+     * 在忽略数据权限的前提下执行一段逻辑。
+     *
+     * @param action 待执行逻辑
+     * @return 逻辑的返回值
+     */
+    public static <T> T ignoringScope(java.util.function.Supplier<T> action) {
+        boolean previous = isIgnored();
+        IGNORED.set(Boolean.TRUE);
+        try {
+            return action.get();
+        } finally {
+            IGNORED.set(previous);
+        }
     }
 
     /**

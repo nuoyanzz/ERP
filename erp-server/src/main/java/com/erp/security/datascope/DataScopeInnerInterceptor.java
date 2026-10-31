@@ -72,6 +72,10 @@ public class DataScopeInnerInterceptor implements InnerInterceptor, ApplicationC
         if (ms.getSqlCommandType() != SqlCommandType.SELECT) {
             return;
         }
+        if (DataScopeContext.isIgnored()) {
+            // 取业务单号等系统级约束查询：单号要求全库唯一，不能按部门裁剪
+            return;
+        }
         TableInfo tableInfo = resolveTableInfo(ms, parameter);
         if (tableInfo == null) {
             return;
@@ -126,6 +130,12 @@ public class DataScopeInnerInterceptor implements InnerInterceptor, ApplicationC
     /**
      * 解析本次查询对应的主表元信息。
      */
+    /**
+     * 解析本次查询对应的主表元信息。
+     * <p>
+     * MyBatis-Plus 的 TableInfo 是按实体类注册的，直接拿 Mapper 接口去查恒为 null，
+     * 必须先取出 Mapper 的实体泛型参数。
+     */
     private TableInfo resolveTableInfo(MappedStatement ms, Object parameter) {
         String id = ms.getId();
         if (id == null || !id.contains(".")) {
@@ -135,9 +145,12 @@ public class DataScopeInnerInterceptor implements InnerInterceptor, ApplicationC
         try {
             Class<?> mapperType = Class.forName(mapperClass, false,
                     Thread.currentThread().getContextClassLoader());
-            TableInfo tableInfo = TableInfoHelper.getTableInfo(mapperType);
-            if (tableInfo != null) {
-                return tableInfo;
+            Class<?> entityType = resolveEntityType(mapperType);
+            if (entityType != null) {
+                TableInfo tableInfo = TableInfoHelper.getTableInfo(entityType);
+                if (tableInfo != null) {
+                    return tableInfo;
+                }
             }
         } catch (ClassNotFoundException ignored) {
             // 交由兜底逻辑处理
@@ -145,6 +158,22 @@ public class DataScopeInnerInterceptor implements InnerInterceptor, ApplicationC
         // BaseMapper 的 selectList / selectOne 等通用方法：走参数类型推断
         if (parameter instanceof QueryWrapper<?> wrapper && wrapper.getEntity() != null) {
             return TableInfoHelper.getTableInfo(wrapper.getEntity().getClass());
+        }
+        return null;
+    }
+
+    /**
+     * 从 Mapper 接口的泛型参数中取出实体类型。
+     */
+    private Class<?> resolveEntityType(Class<?> mapperType) {
+        java.lang.reflect.Type[] interfaces = mapperType.getGenericInterfaces();
+        for (java.lang.reflect.Type type : interfaces) {
+            if (type instanceof java.lang.reflect.ParameterizedType parameterized) {
+                java.lang.reflect.Type[] args = parameterized.getActualTypeArguments();
+                if (args.length == 1 && args[0] instanceof Class<?> entityType) {
+                    return entityType;
+                }
+            }
         }
         return null;
     }
