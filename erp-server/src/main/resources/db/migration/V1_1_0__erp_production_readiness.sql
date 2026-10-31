@@ -376,6 +376,13 @@ CALL erp_add_column('hr_salary_entry', 'create_time', 'DATETIME NOT NULL DEFAULT
 CALL erp_add_column('hr_salary_entry', 'create_by', 'BIGINT');
 CALL erp_add_column('hr_salary_entry', 'deleted', 'SMALLINT NOT NULL DEFAULT 0');
 
+-- 库存与生产单据补齐部门字段（数据权限按此字段过滤）
+CALL erp_add_column('ic_transfer', 'dept_id', 'BIGINT');
+CALL erp_add_column('ic_check', 'dept_id', 'BIGINT');
+CALL erp_add_column('pm_pick', 'dept_id', 'BIGINT');
+CALL erp_add_column('pm_finish', 'dept_id', 'BIGINT');
+CALL erp_add_column('pm_mo', 'dept_id', 'BIGINT');
+
 -- 盘点差异原因码与金额
 CALL erp_add_column('ic_check', 'gain_amount', 'DECIMAL(19,4) NOT NULL DEFAULT 0');
 CALL erp_add_column('ic_check', 'loss_amount', 'DECIMAL(19,4) NOT NULL DEFAULT 0');
