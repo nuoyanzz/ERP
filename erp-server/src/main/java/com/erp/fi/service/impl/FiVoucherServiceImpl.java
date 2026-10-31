@@ -1,5 +1,6 @@
 package com.erp.fi.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -52,6 +53,8 @@ public class FiVoucherServiceImpl extends ServiceImpl<FiVoucherMapper, FiVoucher
     private final FiAccountMapper accountMapper;
     private final FiPeriodMapper periodMapper;
     private final FiBizAccountRuleMapper ruleMapper;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<VoucherVO> pageVoucher(VoucherQueryRequest request) {
@@ -509,7 +512,6 @@ public class FiVoucherServiceImpl extends ServiceImpl<FiVoucherMapper, FiVoucher
     }
 
     private VoucherDraft buildDraft(VoucherSaveRequest request, String period) {
-        checkPeriodOpen(period);
         List<VoucherEntryRequest> entryRequests = request.getEntries();
         if (entryRequests == null || entryRequests.isEmpty()) {
             throw new BizException("凭证明细不能为空");
@@ -557,6 +559,9 @@ public class FiVoucherServiceImpl extends ServiceImpl<FiVoucherMapper, FiVoucher
         if (totalDebit.compareTo(totalCredit) != 0) {
             throw new BizException("凭证借贷不平，无法保存");
         }
+        // 期间校验放在凭证自身校验之后：借贷不平、科目无效这类问题对用户更有指导意义，
+        // 不应被「期间未开放」掩盖
+        checkPeriodOpen(period);
         FiVoucher voucher = new FiVoucher();
         voucher.setWord(StringUtils.hasText(request.getWord()) ? request.getWord() : "记");
         voucher.setVoucherDate(request.getVoucherDate());
@@ -659,9 +664,8 @@ public class FiVoucherServiceImpl extends ServiceImpl<FiVoucherMapper, FiVoucher
      * 保存时若撞号则重新取号重试。
      */
     private String nextVoucherNo(String period) {
-        Integer maxSeq = baseMapper.selectMaxSeqByPeriod(period);
-        int nextSeq = (maxSeq == null ? 0 : maxSeq) + 1;
-        return "记-" + period.replace("-", "") + "-" + String.format("%04d", nextSeq);
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("记", period.replace("-", ""));
     }
 
     private VoucherVO toVO(FiVoucher voucher) {
