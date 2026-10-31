@@ -89,3 +89,23 @@ export const operLogApi = {
 
 
 
+
+export interface ParamVO {
+  id: number
+  paramKey: string
+  paramValue?: string
+  paramName?: string
+  paramType: string
+  status: number
+  remark?: string
+}
+
+export const paramApi = {
+  page: (params: any) =>
+    request.get<any, { records: ParamVO[]; total: number }>('/sys/param/page', { params }),
+  list: () => request.get<any, ParamVO[]>('/sys/param/list'),
+  detail: (id: number) => request.get<any, ParamVO>(`/sys/param/${id}`),
+  create: (data: any) => request.post<any, number>('/sys/param', data),
+  update: (data: any) => request.put<any, void>('/sys/param', data),
+  remove: (id: number) => request.delete<any, void>(`/sys/param/${id}`)
+}

@@ -88,3 +88,35 @@ export const reportApi = {
 
 
 
+
+export interface ExchangeRateVO {
+  id: number
+  currency: string
+  period: string
+  rate: number
+  rateType: number
+  createTime?: string
+}
+
+export const rateApi = {
+  page: (params: any) =>
+    request.get<any, { records: ExchangeRateVO[]; total: number }>('/fi/rate/page', { params }),
+  detail: (id: number) => request.get<any, ExchangeRateVO>(`/fi/rate/${id}`),
+  create: (data: any) => request.post<any, number>('/fi/rate', data),
+  update: (data: any) => request.put<any, void>('/fi/rate', data),
+  remove: (id: number) => request.delete<any, void>(`/fi/rate/${id}`)
+}
+
+export const trialBalanceApi = {
+  generate: (period: string) =>
+    request.get<any, any>('/fi/opening/trial-balance', { params: { period } })
+}
+
+export const bizAccountRuleApi = {
+  page: (params: any) =>
+    request.get<any, { records: any[]; total: number }>('/fi/rule/page', { params }),
+  detail: (id: number) => request.get<any, any>(`/fi/rule/${id}`),
+  create: (data: any) => request.post<any, number>('/fi/rule', data),
+  update: (data: any) => request.put<any, void>('/fi/rule', data),
+  remove: (id: number) => request.delete<any, void>(`/fi/rule/${id}`)
+}

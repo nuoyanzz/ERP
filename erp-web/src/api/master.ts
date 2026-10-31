@@ -112,3 +112,49 @@ export const warehouseApi = {
 
 
 
+
+export interface UnitVO {
+  id: number
+  unitCode: string
+  unitName: string
+  status: number
+  remark?: string
+}
+
+export const unitApi = {
+  page: (params: any) =>
+    request.get<any, { records: UnitVO[]; total: number }>('/md/unit/page', { params }),
+  detail: (id: number) => request.get<any, UnitVO>(`/md/unit/${id}`),
+  create: (data: any) => request.post<any, number>('/md/unit', data),
+  update: (data: any) => request.put<any, void>('/md/unit', data),
+  remove: (id: number) => request.delete<any, void>(`/md/unit/${id}`)
+}
+
+export interface PriceVO {
+  id: number
+  priceNo: string
+  priceName: string
+  customerId?: number
+  customerName?: string
+  supplierId?: number
+  supplierName?: string
+  materialId: number
+  materialCode?: string
+  materialName?: string
+  price: number
+  taxRate: number
+  currency?: string
+  effectiveDate?: string
+  expiryDate?: string
+  status: number
+  remark?: string
+}
+
+export const priceApi = {
+  page: (params: any) =>
+    request.get<any, { records: PriceVO[]; total: number }>('/md/price/page', { params }),
+  detail: (id: number) => request.get<any, PriceVO>(`/md/price/${id}`),
+  create: (data: any) => request.post<any, number>('/md/price', data),
+  update: (data: any) => request.put<any, void>('/md/price', data),
+  remove: (id: number) => request.delete<any, void>(`/md/price/${id}`)
+}
