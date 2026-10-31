@@ -239,7 +239,7 @@ java -cp "target/classes;target/test-classes;$(cat target/cp.txt)" \
 ```bash
 java -cp "target/classes;target/test-classes;$(cat target/cp.txt)" \
   com.erp.tools.SchemaEntityValidator \
-  "jdbc:mysql://localhost:3306/erp?useSSL=false&serverTimezone=Asia/Shanghai" root duan123 \
+  "jdbc:mysql://localhost:3306/erp?useSSL=false&serverTimezone=Asia/Shanghai" root your_password \
   "D:/GitHub/ERP/erp-server/src/main/java"
 ```
 
