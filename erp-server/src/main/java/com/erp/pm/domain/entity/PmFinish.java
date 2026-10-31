@@ -49,6 +49,9 @@ public class PmFinish extends BaseEntity {
     private Long auditBy;
     private LocalDateTime auditTime;
     private String remark;
+
+    /** 所属部门，数据权限按此字段过滤 */
+    private Long deptId;
 }
 
 

@@ -18,9 +18,15 @@ public class PasswordPolicy {
 
     /** 密码必须同时包含字母与数字 */
     private static final Pattern COMPLEXITY_PATTERN = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d).+$");
-    /** 常见弱密码，禁止使用 */
+    /**
+     * 常见弱密码，禁止使用。
+     * <p>
+     * 按「去掉非字母数字后的完全匹配」判断，而不是子串包含——
+     * 否则 admin123 会被 admin 命中、mypassword1 会被 password 命中，
+     * 正常密码被误杀。
+     */
     private static final String[] WEAK_PASSWORDS = {
-            "123456", "admin123", "password", "password123", "qwerty", "111111", "888888", "admin"
+            "123456", "admin", "password", "qwerty", "111111", "888888", "abc123", "654321"
     };
 
     private final JwtProperties jwtProperties;
@@ -41,10 +47,11 @@ public class PasswordPolicy {
         if (jwtProperties.isPasswordRequireComplexity() && !COMPLEXITY_PATTERN.matcher(password).matches()) {
             throw new BizException("密码必须同时包含字母和数字");
         }
-        String lower = password.toLowerCase();
+        // 归一化后与弱口令表完全匹配才算命中
+        String normalized = password.toLowerCase().replaceAll("[^a-z0-9]", "");
         for (String weak : WEAK_PASSWORDS) {
-            if (lower.contains(weak)) {
-                throw new BizException("密码过于简单，包含常见弱口令");
+            if (normalized.equals(weak)) {
+                throw new BizException("密码过于简单，禁止使用常见弱口令");
             }
         }
     }

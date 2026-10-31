@@ -1,8 +1,10 @@
 package com.erp.pa.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.erp.security.datascope.DataScopeHelper;
 import com.erp.ap.service.ApPayableService;
 import com.erp.common.api.PageResult;
 import com.erp.common.exception.BizException;
@@ -64,6 +66,8 @@ public class PaInstockServiceImpl extends ServiceImpl<PaInstockMapper, PaInstock
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
 
     private final PaInstockEntryMapper instockEntryMapper;
+
+    private final DataScopeHelper dataScopeHelper;
     private final PaOrderMapper orderMapper;
     private final PaOrderEntryMapper orderEntryMapper;
     private final MdSupplierMapper supplierMapper;
@@ -73,6 +77,8 @@ public class PaInstockServiceImpl extends ServiceImpl<PaInstockMapper, PaInstock
     private final IcStockService stockService;
     private final FiVoucherService voucherService;
     private final ApPayableService apPayableService;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<PaInstockListVO> pageInstock(PaInstockQueryRequest request) {
@@ -142,6 +148,8 @@ public class PaInstockServiceImpl extends ServiceImpl<PaInstockMapper, PaInstock
         instock.setSupplierId(request.getSupplierId());
         instock.setWarehouseId(request.getWarehouseId());
         instock.setInstockDate(request.getInstockDate());
+        // 归属部门供数据权限过滤：优先继承来源单据，其次取当前用户部门
+        instock.setDeptId(dataScopeHelper.resolveDeptId(null, order == null ? null : order.getDeptId()));
         instock.setStatus(PaInstock.STATUS_DRAFT);
         instock.setVoucherStatus(PaInstock.VOUCHER_STATUS_NONE);
         instock.setRemark(request.getRemark());
@@ -274,7 +282,7 @@ public class PaInstockServiceImpl extends ServiceImpl<PaInstockMapper, PaInstock
         Long voucherId = voucherService.generateBizVoucher(VOUCHER_BIZ_TYPE, instock.getInstockDate(),
                 "采购入库 " + instock.getInstockNo(), voucherLines);
         apPayableService.createFromInstock(instock.getSupplierId(), instock.getId(),
-                instock.getInstockNo(), totalAmount, instock.getInstockDate());
+                instock.getInstockNo(), totalAmount, instock.getInstockDate(), instock.getDeptId());
         refreshOrderStatus(instock.getOrderId());
         PaInstock update = new PaInstock();
         update.setId(id);
@@ -500,20 +508,8 @@ public class PaInstockServiceImpl extends ServiceImpl<PaInstockMapper, PaInstock
     }
 
     private String nextInstockNo(LocalDate instockDate) {
-        String prefix = INSTOCK_NO_PREFIX + instockDate.format(MONTH_FORMATTER) + "-";
-        String lastNo = baseMapper.selectLastInstockNo(prefix);
-        int next = 1;
-        if (StringUtils.hasText(lastNo)) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return prefix + String.format("%04d", next);
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("CR", instockDate.format(MONTH_FORMATTER));
     }
 
     private PaInstockListVO toListVO(PaInstock instock) {

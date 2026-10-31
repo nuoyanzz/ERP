@@ -1,8 +1,10 @@
 package com.erp.sa.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.erp.security.datascope.DataScopeHelper;
 import com.erp.ar.service.ArReceivableService;
 import com.erp.common.api.PageResult;
 import com.erp.common.exception.BizException;
@@ -62,6 +64,8 @@ public class SaReturnServiceImpl extends ServiceImpl<SaReturnMapper, SaReturn> i
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
 
     private final SaReturnEntryMapper returnEntryMapper;
+
+    private final DataScopeHelper dataScopeHelper;
     private final SaOutstockMapper outstockMapper;
     private final SaOutstockEntryMapper outstockEntryMapper;
     private final MdCustomerMapper customerMapper;
@@ -70,6 +74,8 @@ public class SaReturnServiceImpl extends ServiceImpl<SaReturnMapper, SaReturn> i
     private final IcStockService stockService;
     private final FiVoucherService voucherService;
     private final ArReceivableService arReceivableService;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<SaReturnListVO> pageReturn(SaReturnQueryRequest request) {
@@ -111,6 +117,8 @@ public class SaReturnServiceImpl extends ServiceImpl<SaReturnMapper, SaReturn> i
         saReturn.setCustomerId(source.getCustomerId());
         saReturn.setWarehouseId(source.getWarehouseId());
         saReturn.setReturnDate(request.getReturnDate());
+        // 归属部门供数据权限过滤：优先继承来源单据，其次取当前用户部门
+        saReturn.setDeptId(dataScopeHelper.resolveDeptId(null, null));
         saReturn.setStatus(SaReturn.STATUS_DRAFT);
         saReturn.setRemark(request.getRemark());
         this.save(saReturn);
@@ -353,20 +361,8 @@ public class SaReturnServiceImpl extends ServiceImpl<SaReturnMapper, SaReturn> i
     }
 
     private String nextReturnNo(LocalDate returnDate) {
-        String prefix = RETURN_NO_PREFIX + returnDate.format(MONTH_FORMATTER) + "-";
-        String lastNo = baseMapper.selectLastReturnNo(prefix);
-        int next = 1;
-        if (StringUtils.hasText(lastNo)) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return prefix + String.format("%04d", next);
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("XT", returnDate.format(MONTH_FORMATTER));
     }
 
     private SaReturnListVO toListVO(SaReturn saReturn) {

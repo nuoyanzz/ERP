@@ -1,8 +1,10 @@
 package com.erp.sa.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.erp.security.datascope.DataScopeHelper;
 import com.erp.ar.service.ArReceivableService;
 import com.erp.common.api.PageResult;
 import com.erp.common.exception.BizException;
@@ -63,6 +65,8 @@ public class SaOutstockServiceImpl extends ServiceImpl<SaOutstockMapper, SaOutst
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
 
     private final SaOutstockEntryMapper outstockEntryMapper;
+
+    private final DataScopeHelper dataScopeHelper;
     private final SaOrderMapper orderMapper;
     private final SaOrderEntryMapper orderEntryMapper;
     private final MdCustomerMapper customerMapper;
@@ -71,6 +75,8 @@ public class SaOutstockServiceImpl extends ServiceImpl<SaOutstockMapper, SaOutst
     private final IcStockService stockService;
     private final FiVoucherService voucherService;
     private final ArReceivableService arReceivableService;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<SaOutstockListVO> pageOutstock(SaOutstockQueryRequest request) {
@@ -140,6 +146,8 @@ public class SaOutstockServiceImpl extends ServiceImpl<SaOutstockMapper, SaOutst
         outstock.setCustomerId(request.getCustomerId());
         outstock.setWarehouseId(request.getWarehouseId());
         outstock.setOutstockDate(request.getOutstockDate());
+        // 归属部门供数据权限过滤：优先继承来源单据，其次取当前用户部门
+        outstock.setDeptId(dataScopeHelper.resolveDeptId(null, null));
         outstock.setStatus(SaOutstock.STATUS_DRAFT);
         outstock.setVoucherStatus(SaOutstock.VOUCHER_STATUS_NONE);
         outstock.setRemark(request.getRemark());
@@ -293,7 +301,7 @@ public class SaOutstockServiceImpl extends ServiceImpl<SaOutstockMapper, SaOutst
         Long voucherId = voucherService.generateBizVoucher(VOUCHER_BIZ_TYPE, outstock.getOutstockDate(),
                 "销售出库 " + outstock.getOutstockNo(), voucherLines);
         arReceivableService.createFromOutstock(outstock.getCustomerId(), outstock.getId(),
-                outstock.getOutstockNo(), totalAmount, outstock.getOutstockDate());
+                outstock.getOutstockNo(), totalAmount, outstock.getOutstockDate(), outstock.getDeptId());
         refreshOrderStatus(outstock.getOrderId());
         SaOutstock update = new SaOutstock();
         update.setId(id);
@@ -511,20 +519,8 @@ public class SaOutstockServiceImpl extends ServiceImpl<SaOutstockMapper, SaOutst
     }
 
     private String nextOutstockNo(LocalDate outstockDate) {
-        String prefix = OUTSTOCK_NO_PREFIX + outstockDate.format(MONTH_FORMATTER) + "-";
-        String lastNo = baseMapper.selectLastOutstockNo(prefix);
-        int next = 1;
-        if (StringUtils.hasText(lastNo)) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return prefix + String.format("%04d", next);
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("XC", outstockDate.format(MONTH_FORMATTER));
     }
 
     private SaOutstockListVO toListVO(SaOutstock outstock) {

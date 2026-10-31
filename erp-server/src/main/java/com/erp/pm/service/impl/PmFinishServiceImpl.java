@@ -1,8 +1,10 @@
 package com.erp.pm.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.erp.security.datascope.DataScopeHelper;
 import com.erp.common.api.PageResult;
 import com.erp.common.exception.BizException;
 import com.erp.fi.domain.dto.VoucherLine;
@@ -54,6 +56,8 @@ public class PmFinishServiceImpl extends ServiceImpl<PmFinishMapper, PmFinish> i
     private static final int SCALE = 4;
 
     private final PmMoMapper moMapper;
+
+    private final DataScopeHelper dataScopeHelper;
     private final PmMoEntryMapper moEntryMapper;
     private final PmPickEntryMapper pickEntryMapper;
     private final MdWarehouseMapper warehouseMapper;
@@ -62,6 +66,8 @@ public class PmFinishServiceImpl extends ServiceImpl<PmFinishMapper, PmFinish> i
     private final IcStockService stockService;
     private final FiVoucherService voucherService;
     private final PmCostService costService;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<PmFinishVO> pageFinish(int pageNum, int pageSize, Long moId, Integer status) {
@@ -112,6 +118,8 @@ public class PmFinishServiceImpl extends ServiceImpl<PmFinishMapper, PmFinish> i
         finish.setLaborCost(BigDecimal.ZERO);
         finish.setOverheadCost(BigDecimal.ZERO);
         finish.setUnitCost(BigDecimal.ZERO);
+        // 归属部门供数据权限过滤：优先继承来源单据，其次取当前用户部门
+        finish.setDeptId(dataScopeHelper.resolveDeptId(null, null));
         finish.setStatus(PmFinish.STATUS_DRAFT);
         finish.setRemark(request.getRemark());
         this.save(finish);
@@ -341,24 +349,10 @@ public class PmFinishServiceImpl extends ServiceImpl<PmFinishMapper, PmFinish> i
     }
 
     private String nextNo(LocalDate date) {
-        String prefix = NO_PREFIX + date.format(MONTH_FORMATTER) + "-";
-        return prefix + nextSeq(baseMapper.selectLastFinishNo(prefix));
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("FG", date.format(MONTH_FORMATTER));
     }
 
-    private String nextSeq(String lastNo) {
-        int next = 1;
-        if (lastNo != null) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return String.format("%04d", next);
-    }
 }
 
 

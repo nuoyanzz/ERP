@@ -1,7 +1,9 @@
 package com.erp.ic.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.erp.security.datascope.DataScopeHelper;
 import com.erp.wf.integration.ApprovalGate;
 import com.erp.wf.integration.ICTransferApprovalListener;
 import com.erp.common.api.PageResult;
@@ -46,12 +48,16 @@ public class IcTransferServiceImpl implements IcTransferService {
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyyMM");
 
     private final IcTransferMapper transferMapper;
+
+    private final DataScopeHelper dataScopeHelper;
     private final IcTransferEntryMapper transferEntryMapper;
     private final MdWarehouseMapper warehouseMapper;
     private final MdMaterialMapper materialMapper;
     private final IcStockService stockService;
 
     private final ApprovalGate approvalGate;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<IcTransferListVO> pageTransfer(int pageNum, int pageSize, Long fromWarehouseId, Long toWarehouseId, Integer status) {
@@ -89,6 +95,8 @@ public class IcTransferServiceImpl implements IcTransferService {
         transfer.setFromWarehouseId(request.getFromWarehouseId());
         transfer.setToWarehouseId(request.getToWarehouseId());
         transfer.setTransferDate(request.getTransferDate());
+        // 归属部门供数据权限过滤：优先继承来源单据，其次取当前用户部门
+        transfer.setDeptId(dataScopeHelper.resolveDeptId(null, null));
         transfer.setStatus(IcTransfer.STATUS_DRAFT);
         transfer.setRemark(request.getRemark());
         transferMapper.insert(transfer);
@@ -257,20 +265,8 @@ public class IcTransferServiceImpl implements IcTransferService {
     }
 
     private String nextNo(LocalDate transferDate) {
-        String prefix = NO_PREFIX + transferDate.format(MONTH_FORMATTER) + "-";
-        String lastNo = transferMapper.selectLastTransferNo(prefix);
-        int next = 1;
-        if (StringUtils.hasText(lastNo)) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return prefix + String.format("%04d", next);
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("DB", transferDate.format(MONTH_FORMATTER));
     }
 
     private String normalizeBatchNo(String batchNo) {

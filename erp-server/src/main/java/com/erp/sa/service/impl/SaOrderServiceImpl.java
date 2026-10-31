@@ -1,8 +1,10 @@
 package com.erp.sa.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.erp.security.datascope.DataScopeHelper;
 import com.erp.wf.integration.ApprovalGate;
 import com.erp.wf.integration.SAOrderApprovalListener;
 import com.erp.common.api.PageResult;
@@ -50,10 +52,14 @@ public class SaOrderServiceImpl extends ServiceImpl<SaOrderMapper, SaOrder> impl
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
 
     private final SaOrderEntryMapper orderEntryMapper;
+
+    private final DataScopeHelper dataScopeHelper;
     private final MdCustomerMapper customerMapper;
     private final MdMaterialMapper materialMapper;
 
     private final ApprovalGate approvalGate;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<SaOrderListVO> pageOrder(SaOrderQueryRequest request) {
@@ -104,7 +110,7 @@ public class SaOrderServiceImpl extends ServiceImpl<SaOrderMapper, SaOrder> impl
         SaOrder order = new SaOrder();
         order.setOrderNo(nextOrderNo(request.getOrderDate()));
         order.setCustomerId(request.getCustomerId());
-        order.setDeptId(request.getDeptId());
+        order.setDeptId(dataScopeHelper.resolveDeptId(request.getDeptId(), null));
         order.setOrderDate(request.getOrderDate());
         order.setDeliveryDate(request.getDeliveryDate());
         order.setStatus(SaOrder.STATUS_DRAFT);
@@ -133,7 +139,7 @@ public class SaOrderServiceImpl extends ServiceImpl<SaOrderMapper, SaOrder> impl
         SaOrder order = new SaOrder();
         order.setId(request.getId());
         order.setCustomerId(request.getCustomerId());
-        order.setDeptId(request.getDeptId());
+        order.setDeptId(dataScopeHelper.resolveDeptId(request.getDeptId(), null));
         order.setOrderDate(request.getOrderDate());
         order.setDeliveryDate(request.getDeliveryDate());
         order.setRemark(request.getRemark());
@@ -279,25 +285,10 @@ public class SaOrderServiceImpl extends ServiceImpl<SaOrderMapper, SaOrder> impl
     }
 
     private String nextOrderNo(LocalDate orderDate) {
-        String prefix = ORDER_NO_PREFIX + orderDate.format(MONTH_FORMATTER) + "-";
-        String lastNo = baseMapper.selectLastOrderNo(prefix);
-        return prefix + nextSeq(lastNo);
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("XS", orderDate.format(MONTH_FORMATTER));
     }
 
-    private String nextSeq(String lastNo) {
-        int next = 1;
-        if (StringUtils.hasText(lastNo)) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return String.format("%04d", next);
-    }
 
     private Map<Long, MdCustomer> loadCustomers(List<SaOrder> orders) {
         List<Long> customerIds = orders.stream().map(SaOrder::getCustomerId).distinct().collect(Collectors.toList());

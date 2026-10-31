@@ -1,7 +1,9 @@
 package com.erp.ic.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.erp.security.datascope.DataScopeHelper;
 import com.erp.wf.integration.ApprovalGate;
 import com.erp.wf.integration.ICCheckApprovalListener;
 import com.erp.common.api.PageResult;
@@ -54,6 +56,8 @@ public class IcCheckServiceImpl implements IcCheckService {
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyyMM");
 
     private final IcCheckMapper checkMapper;
+
+    private final DataScopeHelper dataScopeHelper;
     private final IcCheckEntryMapper checkEntryMapper;
     private final IcStockMapper stockMapper;
     private final MdWarehouseMapper warehouseMapper;
@@ -62,6 +66,8 @@ public class IcCheckServiceImpl implements IcCheckService {
     private final FiVoucherService voucherService;
 
     private final ApprovalGate approvalGate;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<IcCheckListVO> pageCheck(int pageNum, int pageSize, Long warehouseId, Integer status) {
@@ -100,6 +106,8 @@ public class IcCheckServiceImpl implements IcCheckService {
         check.setCheckNo(nextNo(request.getCheckDate()));
         check.setWarehouseId(request.getWarehouseId());
         check.setCheckDate(request.getCheckDate());
+        // 归属部门供数据权限过滤：优先继承来源单据，其次取当前用户部门
+        check.setDeptId(dataScopeHelper.resolveDeptId(null, null));
         check.setStatus(IcCheck.STATUS_DRAFT);
         check.setGainQty(BigDecimal.ZERO);
         check.setLossQty(BigDecimal.ZERO);
@@ -349,20 +357,8 @@ public class IcCheckServiceImpl implements IcCheckService {
     }
 
     private String nextNo(LocalDate checkDate) {
-        String prefix = NO_PREFIX + checkDate.format(MONTH_FORMATTER) + "-";
-        String lastNo = checkMapper.selectLastCheckNo(prefix);
-        int next = 1;
-        if (StringUtils.hasText(lastNo)) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return prefix + String.format("%04d", next);
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("PD", checkDate.format(MONTH_FORMATTER));
     }
 
     private String normalizeBatchNo(String batchNo) {

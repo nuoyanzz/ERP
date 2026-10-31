@@ -1,5 +1,6 @@
 package com.erp.pm.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.erp.common.api.PageResult;
@@ -80,6 +81,8 @@ public class PmMrpServiceImpl implements PmMrpService {
     private final PmBomMapper bomMapper;
     private final PmBomEntryMapper bomEntryMapper;
     private final PmBomSelector bomSelector;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     // ------------------------------------------------------------
     // MRP 运算：两段式算法
@@ -533,13 +536,13 @@ public class PmMrpServiceImpl implements PmMrpService {
     }
 
     private String nextPaOrderNo(LocalDate date) {
-        String prefix = PA_ORDER_NO_PREFIX + date.format(MONTH_FORMATTER) + "-";
-        return prefix + nextSeq(paOrderMapper.selectLastOrderNo(prefix));
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("CG", date.format(MONTH_FORMATTER));
     }
 
     private String nextMoNo(LocalDate date) {
-        String prefix = MO_NO_PREFIX + date.format(MONTH_FORMATTER) + "-";
-        return prefix + nextSeq(moMapper.selectLastMoNo(prefix));
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("MO", date.format(MONTH_FORMATTER));
     }
 
     @Override
@@ -772,25 +775,10 @@ public class PmMrpServiceImpl implements PmMrpService {
     }
 
     private String nextRunNo() {
-        String prefix = NO_PREFIX + LocalDate.now().format(DATE_FORMATTER) + "-";
-        String lastNo = mrpResultMapper.selectLastRunNo(prefix);
-        return prefix + nextSeq(lastNo);
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("MRP", LocalDate.now().format(DATE_FORMATTER));
     }
 
-    private String nextSeq(String lastNo) {
-        int next = 1;
-        if (StringUtils.hasText(lastNo)) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return String.format("%04d", next);
-    }
 }
 
 

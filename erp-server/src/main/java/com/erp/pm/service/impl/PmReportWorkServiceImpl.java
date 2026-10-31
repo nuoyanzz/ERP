@@ -1,5 +1,6 @@
 package com.erp.pm.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -56,6 +57,8 @@ public class PmReportWorkServiceImpl extends ServiceImpl<PmReportWorkMapper, PmR
     private final HrEmployeeMapper employeeMapper;
     private final PmCostService costService;
     private final FiVoucherService voucherService;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<PmReportWorkVO> pageReport(int pageNum, int pageSize, Long moId, Integer status, String reportNo) {
@@ -310,24 +313,10 @@ public class PmReportWorkServiceImpl extends ServiceImpl<PmReportWorkMapper, PmR
     }
 
     private String nextNo(LocalDate date) {
-        String prefix = NO_PREFIX + date.format(MONTH_FORMATTER) + "-";
-        return prefix + nextSeq(baseMapper.selectLastReportNo(prefix));
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("RW", date.format(MONTH_FORMATTER));
     }
 
-    private String nextSeq(String lastNo) {
-        int next = 1;
-        if (StringUtils.hasText(lastNo)) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return String.format("%04d", next);
-    }
 }
 
 

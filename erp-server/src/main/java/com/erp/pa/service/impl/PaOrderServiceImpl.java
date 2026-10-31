@@ -1,8 +1,10 @@
 package com.erp.pa.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.erp.security.datascope.DataScopeHelper;
 import com.erp.common.api.PageResult;
 import com.erp.common.exception.BizException;
 import com.erp.md.domain.entity.MdMaterial;
@@ -50,10 +52,14 @@ public class PaOrderServiceImpl extends ServiceImpl<PaOrderMapper, PaOrder> impl
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
 
     private final PaOrderEntryMapper orderEntryMapper;
+
+    private final DataScopeHelper dataScopeHelper;
     private final MdSupplierMapper supplierMapper;
     private final MdMaterialMapper materialMapper;
 
     private final com.erp.wf.integration.ApprovalGate approvalGate;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
     @Override
     public PageResult<PaOrderListVO> pageOrder(PaOrderQueryRequest request) {
         Page<PaOrder> page = this.page(request.toPage(), Wrappers.<PaOrder>lambdaQuery()
@@ -104,7 +110,7 @@ public class PaOrderServiceImpl extends ServiceImpl<PaOrderMapper, PaOrder> impl
         PaOrder order = new PaOrder();
         order.setOrderNo(nextOrderNo(request.getOrderDate()));
         order.setSupplierId(request.getSupplierId());
-        order.setDeptId(request.getDeptId());
+        order.setDeptId(dataScopeHelper.resolveDeptId(request.getDeptId(), null));
         order.setOrderDate(request.getOrderDate());
         order.setDeliveryDate(request.getDeliveryDate());
         order.setStatus(PaOrder.STATUS_DRAFT);
@@ -137,7 +143,7 @@ public class PaOrderServiceImpl extends ServiceImpl<PaOrderMapper, PaOrder> impl
         PaOrder order = new PaOrder();
         order.setId(request.getId());
         order.setSupplierId(request.getSupplierId());
-        order.setDeptId(request.getDeptId());
+        order.setDeptId(dataScopeHelper.resolveDeptId(request.getDeptId(), null));
         order.setOrderDate(request.getOrderDate());
         order.setDeliveryDate(request.getDeliveryDate());
         order.setRemark(request.getRemark());
@@ -282,24 +288,10 @@ public class PaOrderServiceImpl extends ServiceImpl<PaOrderMapper, PaOrder> impl
     }
 
     private String nextOrderNo(LocalDate orderDate) {
-        String prefix = ORDER_NO_PREFIX + orderDate.format(MONTH_FORMATTER) + "-";
-        return prefix + nextSeq(baseMapper.selectLastOrderNo(prefix));
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("CG", orderDate.format(MONTH_FORMATTER));
     }
 
-    private String nextSeq(String lastNo) {
-        int next = 1;
-        if (StringUtils.hasText(lastNo)) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return String.format("%04d", next);
-    }
 
     private Map<Long, MdSupplier> loadSuppliers(List<PaOrder> orders) {
         List<Long> supplierIds = orders.stream().map(PaOrder::getSupplierId).distinct().collect(Collectors.toList());

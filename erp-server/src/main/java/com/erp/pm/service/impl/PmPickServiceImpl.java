@@ -1,8 +1,10 @@
 package com.erp.pm.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.erp.security.datascope.DataScopeHelper;
 import com.erp.wf.integration.ApprovalGate;
 import com.erp.wf.integration.PMPickApprovalListener;
 import com.erp.common.api.PageResult;
@@ -59,6 +61,8 @@ public class PmPickServiceImpl extends ServiceImpl<PmPickMapper, PmPick> impleme
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyyMM");
 
     private final PmPickEntryMapper pickEntryMapper;
+
+    private final DataScopeHelper dataScopeHelper;
     private final PmBomEntryMapper bomEntryMapper;
     private final PmMoMapper moMapper;
     private final PmMoEntryMapper moEntryMapper;
@@ -68,6 +72,8 @@ public class PmPickServiceImpl extends ServiceImpl<PmPickMapper, PmPick> impleme
 
     private final ApprovalGate approvalGate;
     private final FiVoucherService voucherService;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<PmPickVO> pagePick(int pageNum, int pageSize, Long moId, Integer status) {
@@ -113,6 +119,8 @@ public class PmPickServiceImpl extends ServiceImpl<PmPickMapper, PmPick> impleme
         pick.setMoId(request.getMoId());
         pick.setWarehouseId(request.getWarehouseId());
         pick.setPickDate(request.getPickDate());
+        // 归属部门供数据权限过滤：优先继承来源单据，其次取当前用户部门
+        pick.setDeptId(dataScopeHelper.resolveDeptId(null, null));
         pick.setStatus(PmPick.STATUS_DRAFT);
         pick.setRemark(request.getRemark());
         this.save(pick);
@@ -379,24 +387,10 @@ public class PmPickServiceImpl extends ServiceImpl<PmPickMapper, PmPick> impleme
     }
 
     private String nextNo(LocalDate date) {
-        String prefix = NO_PREFIX + date.format(MONTH_FORMATTER) + "-";
-        return prefix + nextSeq(baseMapper.selectLastPickNo(prefix));
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("PK", date.format(MONTH_FORMATTER));
     }
 
-    private String nextSeq(String lastNo) {
-        int next = 1;
-        if (lastNo != null) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return String.format("%04d", next);
-    }
 }
 
 
