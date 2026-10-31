@@ -30,16 +30,20 @@ public class WfTaskController {
     @RequiresPermission("wf:task:todo")
     @OperLog(module = "wf")
     public Result<PageResult<WfTaskVO>> todo(@RequestParam(defaultValue = "1") int pageNum,
-                                             @RequestParam(defaultValue = "10") int pageSize) {
-        return Result.ok(taskService.todoPage(pageNum, pageSize));
+                                             @RequestParam(defaultValue = "10") int pageSize,
+                                             @RequestParam(required = false) String bizType,
+                                             @RequestParam(required = false) Long bizId) {
+        return Result.ok(taskService.todoPage(pageNum, pageSize, bizType, bizId));
     }
 
     @GetMapping("/done")
     @RequiresPermission("wf:task:done")
     @OperLog(module = "wf")
     public Result<PageResult<WfTaskVO>> done(@RequestParam(defaultValue = "1") int pageNum,
-                                             @RequestParam(defaultValue = "10") int pageSize) {
-        return Result.ok(taskService.donePage(pageNum, pageSize));
+                                             @RequestParam(defaultValue = "10") int pageSize,
+                                             @RequestParam(required = false) String bizType,
+                                             @RequestParam(required = false) Long bizId) {
+        return Result.ok(taskService.donePage(pageNum, pageSize, bizType, bizId));
     }
 
     /**

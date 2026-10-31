@@ -6,9 +6,21 @@ import com.erp.wf.domain.vo.WfTaskVO;
 
 public interface WfTaskService {
 
-    PageResult<WfTaskVO> todoPage(int pageNum, int pageSize);
+    /**
+     * 我的待办。
+     *
+     * @param bizType 业务类型过滤（如 PA_ORDER），为空表示不限
+     * @param bizId   业务单据 ID 过滤，为空表示不限
+     */
+    PageResult<WfTaskVO> todoPage(int pageNum, int pageSize, String bizType, Long bizId);
 
-    PageResult<WfTaskVO> donePage(int pageNum, int pageSize);
+    /**
+     * 我的已办。
+     *
+     * @param bizType 业务类型过滤（如 PA_ORDER），为空表示不限
+     * @param bizId   业务单据 ID 过滤，为空表示不限
+     */
+    PageResult<WfTaskVO> donePage(int pageNum, int pageSize, String bizType, Long bizId);
 
     /**
      * 查询某个流程实例下的全部任务。

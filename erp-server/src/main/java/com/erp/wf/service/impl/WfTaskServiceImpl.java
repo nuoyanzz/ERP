@@ -41,23 +41,64 @@ public class WfTaskServiceImpl extends ServiceImpl<WfTaskMapper, WfTask> impleme
     private final ApprovalDispatcher dispatcher;
 
     @Override
-    public PageResult<WfTaskVO> todoPage(int pageNum, int pageSize) {
+    public PageResult<WfTaskVO> todoPage(int pageNum, int pageSize, String bizType, Long bizId) {
         Long currentUserId = requireCurrentUser();
-        Page<WfTask> page = this.page(new Page<>(pageNum, pageSize), Wrappers.<WfTask>lambdaQuery()
+        var query = Wrappers.<WfTask>lambdaQuery()
                 .eq(WfTask::getAssigneeId, currentUserId)
                 .eq(WfTask::getStatus, WfTask.STATUS_PENDING)
-                .orderByAsc(WfTask::getId));
-        return toPageResult(page);
+                .orderByAsc(WfTask::getId);
+        List<Long> instanceIds = filterInstanceIds(bizType, bizId);
+        if (instanceIds != null) {
+            if (instanceIds.isEmpty()) {
+                return emptyPage(pageNum, pageSize);
+            }
+            query.in(WfTask::getInstanceId, instanceIds);
+        }
+        return toPageResult(this.page(new Page<>(pageNum, pageSize), query));
     }
 
     @Override
-    public PageResult<WfTaskVO> donePage(int pageNum, int pageSize) {
+    public PageResult<WfTaskVO> donePage(int pageNum, int pageSize, String bizType, Long bizId) {
         Long currentUserId = requireCurrentUser();
-        Page<WfTask> page = this.page(new Page<>(pageNum, pageSize), Wrappers.<WfTask>lambdaQuery()
+        var query = Wrappers.<WfTask>lambdaQuery()
                 .eq(WfTask::getOperateBy, currentUserId)
                 .in(WfTask::getStatus, WfTask.STATUS_APPROVED, WfTask.STATUS_REJECTED)
-                .orderByDesc(WfTask::getOperateTime));
-        return toPageResult(page);
+                .orderByDesc(WfTask::getOperateTime);
+        List<Long> instanceIds = filterInstanceIds(bizType, bizId);
+        if (instanceIds != null) {
+            if (instanceIds.isEmpty()) {
+                return emptyPage(pageNum, pageSize);
+            }
+            query.in(WfTask::getInstanceId, instanceIds);
+        }
+        return toPageResult(this.page(new Page<>(pageNum, pageSize), query));
+    }
+
+    /**
+     * 按业务类型/单据解析流程实例 ID 集合。
+     *
+     * @return null 表示不需要过滤；空集合表示过滤后无匹配实例
+     */
+    private List<Long> filterInstanceIds(String bizType, Long bizId) {
+        boolean hasType = bizType != null && !bizType.isBlank();
+        boolean hasId = bizId != null;
+        if (!hasType && !hasId) {
+            return null;
+        }
+        var query = Wrappers.<WfInstance>lambdaQuery();
+        if (hasType) {
+            query.eq(WfInstance::getBizType, bizType.trim());
+        }
+        if (hasId) {
+            query.eq(WfInstance::getBizId, bizId);
+        }
+        return instanceMapper.selectList(query).stream().map(WfInstance::getId).collect(Collectors.toList());
+    }
+
+    private PageResult<WfTaskVO> emptyPage(int pageNum, int pageSize) {
+        Page<WfTaskVO> voPage = new Page<>(pageNum, pageSize, 0);
+        voPage.setRecords(Collections.emptyList());
+        return PageResult.of(voPage);
     }
 
     @Override
