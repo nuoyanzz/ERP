@@ -1,14 +1,15 @@
 server:
-  port: 8487
+  port: ${SERVER_PORT:8487}
 
 spring:
   application:
     name: erp-server
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/erp?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
-    username: root
-    password: duan123
+    # 连接信息与口令均可用环境变量覆盖，生产环境不要把口令写进配置文件
+    url: ${DB_URL:jdbc:mysql://localhost:3306/erp?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:duan123}
   data:
     redis:
       host: localhost
@@ -38,8 +39,17 @@ mybatis-plus:
 jwt:
   header: Authorization
   token-prefix: "Bearer "
-  secret: erp-management-system-default-jwt-secret-key-2026
+  # 生产环境必须用 JWT_SECRET 环境变量覆盖默认密钥
+  secret: ${JWT_SECRET:erp-management-system-default-jwt-secret-key-2026}
   expire-hours: 24
+  refresh-expire-days: 7
+  # 登录失败锁定策略
+  max-login-fail-count: 5
+  lock-minutes: 15
+  # 密码策略
+  password-min-length: 8
+  password-expire-days: 90
+  password-require-complexity: true
 
 springdoc:
   swagger-ui:
