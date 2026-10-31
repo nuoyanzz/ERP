@@ -73,7 +73,7 @@ public final class WorkflowE2ETest {
         });
 
         step("6. 采购员收到待办", () -> {
-            String resp = get("/wf/task/todo?pageNum=1&pageSize=5", pToken);
+            String resp = get("/wf/task/todo?pageNum=1&pageSize=5&bizType=PA_ORDER&bizId=" + smallOrder[0], pToken);
             check(resp.contains("\"code\":200"), "查询待办失败: " + brief(resp));
             check(!resp.contains("\"records\":[]"), "采购员应收到待办任务");
             return "待办已生成";
@@ -81,7 +81,7 @@ public final class WorkflowE2ETest {
 
         final String[] taskId = new String[1];
         step("7. 取出待办任务 ID", () -> {
-            String resp = get("/wf/task/todo?pageNum=1&pageSize=5", pToken);
+            String resp = get("/wf/task/todo?pageNum=1&pageSize=5&bizType=PA_ORDER&bizId=" + smallOrder[0], pToken);
             Matcher m = Pattern.compile("\"id\":(\\d+)[^}]*\"nodeName\":\"([^\"]*)\"").matcher(resp);
             require(m.find(), "未找到待办任务: " + brief(resp));
             taskId[0] = m.group(1);
@@ -95,7 +95,9 @@ public final class WorkflowE2ETest {
         });
 
         step("9. 审批通过后订单变为已审核", () -> {
-            String resp = get("/pa/order/" + smallOrder[0], pToken);
+            // 业务回调在事务提交后执行，这里轮询等待
+            String resp = waitFor(() -> safeGet("/pa/order/" + smallOrder[0], pToken),
+                    r -> r.contains("\"status\":1"), 8000);
             check(resp.contains("\"status\":1"), "订单应变为已审核: " + brief(resp));
             return "订单状态 = 已审核（业务动作由审批回调触发）";
         });
@@ -118,7 +120,7 @@ public final class WorkflowE2ETest {
         });
 
         step("12. 采购员通过第一级后转财务总监", () -> {
-            String resp = get("/wf/task/todo?pageNum=1&pageSize=5", pToken);
+            String resp = get("/wf/task/todo?pageNum=1&pageSize=5&bizType=PA_ORDER&bizId=" + bigOrder[0], pToken);
             Matcher m = Pattern.compile("\"id\":(\\d+)[^}]*\"nodeName\":\"([^\"]*)\"").matcher(resp);
             require(m.find(), "未找到待办: " + brief(resp));
             String id = m.group(1);
@@ -128,7 +130,9 @@ public final class WorkflowE2ETest {
         });
 
         step("13. 财务主管收到财务总监审批待办", () -> {
-            String resp = get("/wf/task/todo?pageNum=1&pageSize=5", fToken);
+            // 上一节点通过后才激活下一节点，轮询等待
+            String resp = waitFor(() -> safeGet("/wf/task/todo?pageNum=1&pageSize=5&bizType=PA_ORDER&bizId=" + bigOrder[0], fToken),
+                    r -> !r.contains("\"records\":[]"), 8000);
             check(resp.contains("\"code\":200"), "查询待办失败: " + brief(resp));
             check(!resp.contains("\"records\":[]"), "财务主管应收到待办");
             Matcher m = Pattern.compile("\"nodeName\":\"([^\"]*)\"").matcher(resp);
@@ -138,7 +142,7 @@ public final class WorkflowE2ETest {
         });
 
         step("14. 财务总监审批通过后订单已审核", () -> {
-            String resp = get("/wf/task/todo?pageNum=1&pageSize=5", fToken);
+            String resp = get("/wf/task/todo?pageNum=1&pageSize=5&bizType=PA_ORDER&bizId=" + bigOrder[0], fToken);
             Matcher m = Pattern.compile("\"id\":(\\d+)").matcher(resp);
             require(m.find(), "未找到财务待办");
             String approve = post("/wf/task/" + m.group(1) + "/approve", "{\"comment\":\"同意\"}", fToken);
@@ -161,7 +165,7 @@ public final class WorkflowE2ETest {
         });
 
         step("16. 驳回后订单保持暂存", () -> {
-            String resp = get("/wf/task/todo?pageNum=1&pageSize=5", pToken);
+            String resp = get("/wf/task/todo?pageNum=1&pageSize=5&bizType=PA_ORDER&bizId=" + rejectOrder[0], pToken);
             Matcher m = Pattern.compile("\"id\":(\\d+)").matcher(resp);
             require(m.find(), "未找到待办");
             String reject = post("/wf/task/" + m.group(1) + "/reject", "{\"comment\":\"预算不足\"}", pToken);
@@ -186,6 +190,7 @@ public final class WorkflowE2ETest {
 
         System.out.println("\n============ 验证结果 ============");
         System.out.println("通过: " + passed + "  失败: " + failed);
+        System.out.println("SUMMARY pass=" + passed + " fail=" + failed);
         if (failed > 0) {
             System.exit(1);
         }
@@ -229,6 +234,43 @@ public final class WorkflowE2ETest {
             return "{\"httpStatus\":" + code + "}";
         }
         return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 轮询等待条件成立。业务回调在事务提交后异步执行，需要等待其完成。
+     */
+    /**
+     * 不抛受检异常的 GET，供轮询使用。
+     */
+    private static String safeGet(String path, String token) {
+        try {
+            return get(path, token);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private static String waitFor(java.util.function.Supplier<String> supplier,
+                                 java.util.function.Predicate<String> condition, long timeoutMs) {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        String last = "";
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                last = supplier.get();
+            } catch (Exception e) {
+                last = "";
+            }
+            if (condition.test(last)) {
+                return last;
+            }
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        return last;
     }
 
     private static String extract(String text, String regex) {

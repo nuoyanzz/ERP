@@ -14,8 +14,9 @@ cd "$(dirname "$0")/.."
 SERVER_PORT=8487
 JAR=target/erp-server-1.0.0-SNAPSHOT.jar
 DB_URL="jdbc:mysql://localhost:3306/erp?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
-DB_USER=root
-DB_PASS=duan123
+# 数据库凭据可用环境变量覆盖，与应用配置保持一致
+DB_USER=${DB_USERNAME:-root}
+DB_PASS=${DB_PASSWORD:-your_password}
 
 step() { echo ""; echo "=========== $* ==========="; }
 
@@ -46,6 +47,7 @@ if [ "$1" != "--skip-reset" ]; then
            src/main/resources/db/migration/V1_1_1__wf_enhancement.sql \
            src/main/resources/db/migration/V1_1_1__pm_enhancement.sql \
            src/main/resources/db/migration/V1_1_2__sys_dict.sql \
+           src/main/resources/db/migration/V1_1_3__sys_serial_no.sql \
            src/main/resources/db/data.sql; do
     RESULT=$(java -cp "$CP" com.erp.tools.SqlRunner "$DB_URL" "$DB_USER" "$DB_PASS" "$f" 2>&1 | grep -E "^OK=" || echo "OK=0 FAILED=1")
     echo "  $(basename "$f"): $RESULT"

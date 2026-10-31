@@ -259,6 +259,7 @@ public final class E2ETest {
 
         System.out.println("\n================ 验证结果 ================");
         System.out.println("通过: " + passed + "  失败: " + failed);
+        System.out.println("SUMMARY pass=" + passed + " fail=" + failed);
         if (failed > 0) {
             System.exit(1);
         }
