@@ -1,5 +1,6 @@
 package com.erp.ar.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -40,6 +41,8 @@ public class ArReceivableServiceImpl extends ServiceImpl<ArReceivableMapper, ArR
     private static final int CREDIT_DAYS = 30;
 
     private final MdCustomerMapper customerMapper;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<ArReceivableVO> pageReceivable(ArReceivableQueryRequest request) {
@@ -68,7 +71,8 @@ public class ArReceivableServiceImpl extends ServiceImpl<ArReceivableMapper, ArR
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void createFromOutstock(Long customerId, Long sourceId, String sourceNo, BigDecimal amount, LocalDate bizDate) {
+    public void createFromOutstock(Long customerId, Long sourceId, String sourceNo, BigDecimal amount,
+                                    LocalDate bizDate, Long deptId) {
         ArReceivable receivable = new ArReceivable();
         receivable.setReceivableNo(nextNo(bizDate));
         receivable.setCustomerId(customerId);
@@ -79,6 +83,7 @@ public class ArReceivableServiceImpl extends ServiceImpl<ArReceivableMapper, ArR
         receivable.setReceivedAmount(BigDecimal.ZERO);
         receivable.setStatus(ArReceivable.STATUS_OPEN);
         receivable.setDueDate(bizDate.plusDays(CREDIT_DAYS));
+        receivable.setDeptId(deptId);
         this.save(receivable);
     }
 
@@ -199,24 +204,10 @@ public class ArReceivableServiceImpl extends ServiceImpl<ArReceivableMapper, ArR
     }
 
     private String nextNo(LocalDate date) {
-        String prefix = NO_PREFIX + date.format(MONTH_FORMATTER) + "-";
-        return prefix + nextSeq(baseMapper.selectLastReceivableNo(prefix));
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("AR", date.format(MONTH_FORMATTER));
     }
 
-    private String nextSeq(String lastNo) {
-        int next = 1;
-        if (StringUtils.hasText(lastNo)) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return String.format("%04d", next);
-    }
 }
 
 

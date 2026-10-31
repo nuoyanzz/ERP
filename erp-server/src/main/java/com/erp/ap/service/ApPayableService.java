@@ -13,7 +13,8 @@ public interface ApPayableService {
 
     ApPayableVO getPayableDetail(Long id);
 
-    void createFromInstock(Long supplierId, Long sourceId, String sourceNo, BigDecimal amount, LocalDate bizDate);
+    void createFromInstock(Long supplierId, Long sourceId, String sourceNo, BigDecimal amount,
+                          LocalDate bizDate, Long deptId);
 
     /**
      * 冲销应付：采购退货时按来源入库单冲减应付余额。

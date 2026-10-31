@@ -1,8 +1,10 @@
 package com.erp.ar.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.erp.security.datascope.DataScopeHelper;
 import com.erp.common.api.PageResult;
 import com.erp.common.exception.BizException;
 import com.erp.fi.domain.dto.VoucherLine;
@@ -45,9 +47,13 @@ public class ArReceiptServiceImpl extends ServiceImpl<ArReceiptMapper, ArReceipt
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyyMM");
 
     private final ArReceivableMapper receivableMapper;
+
+    private final DataScopeHelper dataScopeHelper;
     private final ArVerifyMapper verifyMapper;
     private final MdCustomerMapper customerMapper;
     private final FiVoucherService voucherService;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<ArReceiptVO> pageReceipt(int pageNum, int pageSize, Long customerId, Integer status) {
@@ -87,6 +93,8 @@ public class ArReceiptServiceImpl extends ServiceImpl<ArReceiptMapper, ArReceipt
         receipt.setCustomerId(request.getCustomerId());
         receipt.setReceiptDate(request.getReceiptDate());
         receipt.setAmount(request.getAmount());
+        // 归属部门供数据权限过滤：优先继承来源单据，其次取当前用户部门
+        receipt.setDeptId(dataScopeHelper.resolveDeptId(null, null));
         receipt.setStatus(ArReceipt.STATUS_DRAFT);
         receipt.setRemark(request.getRemark());
         this.save(receipt);
@@ -188,6 +196,10 @@ public class ArReceiptServiceImpl extends ServiceImpl<ArReceiptMapper, ArReceipt
                                 .ruleKey("RECEIVABLE")
                                 .amount(receipt.getAmount())
                                 .summary("核销应收账款")
+                                // 应收账款按客户辅助核算，收款冲销也必须带上客户，
+                                // 否则往来对账按 aux_id 汇总总账时余额无法逐客户核平
+                                .auxType(com.erp.fi.domain.entity.FiVoucherEntry.AUX_CUSTOMER)
+                                .auxId(receipt.getCustomerId())
                                 .build()));
         ArReceipt update = new ArReceipt();
         update.setId(id);
@@ -242,20 +254,8 @@ public class ArReceiptServiceImpl extends ServiceImpl<ArReceiptMapper, ArReceipt
     }
 
     private String nextNo(LocalDate date) {
-        String prefix = NO_PREFIX + date.format(MONTH_FORMATTER) + "-";
-        String lastNo = baseMapper.selectLastReceiptNo(prefix);
-        int next = 1;
-        if (lastNo != null) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return prefix + String.format("%04d", next);
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("SK", date.format(MONTH_FORMATTER));
     }
 }
 

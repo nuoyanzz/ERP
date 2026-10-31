@@ -15,7 +15,8 @@ public interface ArReceivableService {
 
     ArReceivableVO getReceivableDetail(Long id);
 
-    void createFromOutstock(Long customerId, Long sourceId, String sourceNo, BigDecimal amount, LocalDate bizDate);
+    void createFromOutstock(Long customerId, Long sourceId, String sourceNo, BigDecimal amount,
+                          LocalDate bizDate, Long deptId);
 
     /**
      * 冲销应收：销售退货时按来源出库单冲减应收余额。

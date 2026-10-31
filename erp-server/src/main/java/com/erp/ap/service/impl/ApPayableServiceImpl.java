@@ -1,5 +1,6 @@
 package com.erp.ap.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -37,6 +38,8 @@ public class ApPayableServiceImpl extends ServiceImpl<ApPayableMapper, ApPayable
     private static final int CREDIT_DAYS = 30;
 
     private final MdSupplierMapper supplierMapper;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<ApPayableVO> pagePayable(ApPayableQueryRequest request) {
@@ -65,7 +68,8 @@ public class ApPayableServiceImpl extends ServiceImpl<ApPayableMapper, ApPayable
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void createFromInstock(Long supplierId, Long sourceId, String sourceNo, BigDecimal amount, LocalDate bizDate) {
+    public void createFromInstock(Long supplierId, Long sourceId, String sourceNo, BigDecimal amount,
+                                    LocalDate bizDate, Long deptId) {
         ApPayable payable = new ApPayable();
         payable.setPayableNo(nextNo(bizDate));
         payable.setSupplierId(supplierId);
@@ -76,6 +80,7 @@ public class ApPayableServiceImpl extends ServiceImpl<ApPayableMapper, ApPayable
         payable.setPaidAmount(BigDecimal.ZERO);
         payable.setStatus(ApPayable.STATUS_OPEN);
         payable.setDueDate(bizDate.plusDays(CREDIT_DAYS));
+        payable.setDeptId(deptId);
         this.save(payable);
     }
 
@@ -145,24 +150,10 @@ public class ApPayableServiceImpl extends ServiceImpl<ApPayableMapper, ApPayable
     }
 
     private String nextNo(LocalDate date) {
-        String prefix = NO_PREFIX + date.format(MONTH_FORMATTER) + "-";
-        return prefix + nextSeq(baseMapper.selectLastPayableNo(prefix));
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("AP", date.format(MONTH_FORMATTER));
     }
 
-    private String nextSeq(String lastNo) {
-        int next = 1;
-        if (StringUtils.hasText(lastNo)) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return String.format("%04d", next);
-    }
 }
 
 

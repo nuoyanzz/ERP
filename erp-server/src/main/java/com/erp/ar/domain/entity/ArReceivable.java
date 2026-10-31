@@ -25,7 +25,12 @@ public class ArReceivable extends BaseEntity {
     private BigDecimal receivedAmount;
     private Integer status;
     private LocalDate dueDate;
+    /** 已计提的坏账准备金额 */
+    private BigDecimal badDebtAmount;
     private String remark;
+
+    /** 所属部门，数据权限按此字段过滤 */
+    private Long deptId;
 }
 
 
