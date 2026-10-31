@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class UserSaveRequest {
 
@@ -33,6 +35,12 @@ public class UserSaveRequest {
     private Long deptId;
     private Integer status;
     private String remark;
+
+    /**
+     * 角色 ID 列表。创建或修改用户时一并分配，
+     * 免去再调一次分配角色接口。
+     */
+    private List<Long> roleIds;
 }
 
 

@@ -86,6 +86,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         user.setPassword(passwordEncoder.encode(rawPassword));
         user.setPwdUpdateTime(LocalDateTime.now());
         this.save(user);
+        applyRoles(user.getId(), request.getRoleIds());
         return user.getId();
     }
 
@@ -114,6 +115,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         BeanUtils.copyProperties(request, user);
         user.setPassword(null);
         this.updateById(user);
+        applyRoles(user.getId(), request.getRoleIds());
     }
 
     @Override
@@ -158,6 +160,18 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
                 .set(SysUser::getUpdateTime, LocalDateTime.now())
                 .set(SysUser::getUpdateBy, SecurityUtils.getCurrentUserId())
                 .eq(SysUser::getId, id));
+    }
+
+    /**
+     * 按角色 ID 列表分配角色。角色列表为空时不改动已有分配。
+     */
+    private void applyRoles(Long userId, List<Long> roleIds) {
+        if (roleIds == null || roleIds.isEmpty()) {
+            return;
+        }
+        AssignRoleRequest request = new AssignRoleRequest();
+        request.setRoleIds(roleIds);
+        assignRoles(userId, request);
     }
 
     @Override
