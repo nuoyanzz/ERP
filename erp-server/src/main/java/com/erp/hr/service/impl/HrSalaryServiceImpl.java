@@ -1,5 +1,6 @@
 package com.erp.hr.service.impl;
 
+import com.erp.common.util.SerialNoGenerator;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -54,6 +55,8 @@ public class HrSalaryServiceImpl extends ServiceImpl<HrSalaryMapper, HrSalary> i
     private final HrEmployeeMapper employeeMapper;
     private final HrDeptMapper deptMapper;
     private final FiVoucherService voucherService;
+    /** 业务单号生成器（原子自增，避免并发撞号） */
+    private final SerialNoGenerator serialNoGenerator;
 
     @Override
     public PageResult<HrSalaryVO> pageSalary(HrSalaryQueryRequest request) {
@@ -320,24 +323,10 @@ public class HrSalaryServiceImpl extends ServiceImpl<HrSalaryMapper, HrSalary> i
     }
 
     private String nextNo(String period) {
-        String prefix = NO_PREFIX + period.replace("-", "") + "-";
-        return prefix + nextSeq(baseMapper.selectLastSalaryNo(prefix));
+        // 序号取自流水表原子自增：并发不撞号，软删除不重用旧号
+        return serialNoGenerator.next("GZ", period.replace("-", ""));
     }
 
-    private String nextSeq(String lastNo) {
-        int next = 1;
-        if (lastNo != null) {
-            int idx = lastNo.lastIndexOf('-');
-            if (idx >= 0 && idx < lastNo.length() - 1) {
-                try {
-                    next = Integer.parseInt(lastNo.substring(idx + 1)) + 1;
-                } catch (NumberFormatException ignored) {
-                    next = 1;
-                }
-            }
-        }
-        return String.format("%04d", next);
-    }
 
     private static class SalaryDraft {
         private BigDecimal base;
