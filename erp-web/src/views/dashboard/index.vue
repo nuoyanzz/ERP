@@ -114,7 +114,7 @@
         <el-card shadow="never" class="panel">
           <template #header>
             <span class="section-title">逾期应收 TOP</span>
-            <el-button link type="primary" size="small" @click="router.push('/ar/aging')">
+            <el-button class="panel__action" link type="primary" size="small" @click="router.push('/ar/aging')">
               查看账龄分析<el-icon><ArrowRight /></el-icon>
             </el-button>
           </template>
@@ -292,6 +292,18 @@ const shortcuts = [
   font-size: 12px;
   font-weight: 400;
   color: var(--el-text-color-secondary);
+}
+
+/* 面板头改为 flex 布局后，提示文字靠 margin 自动靠右 */
+:deep(.el-card__header) .section-hint {
+  float: none;
+  margin-left: auto;
+}
+
+/* 面板头右侧的操作按钮 */
+.panel__action {
+  margin-left: auto;
+  padding: 0;
 }
 
 /* ---------- 待我处理 ---------- */
