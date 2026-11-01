@@ -1,34 +1,22 @@
 <template>
-  <div class="page-container">
-    <!-- 欢迎横幅 -->
-    <div class="banner">
-      <div class="banner__decor banner__decor--1" />
-      <div class="banner__decor banner__decor--2" />
-      <div class="banner__content">
-        <h1 class="banner__title">
-          {{ greeting }}，{{ nickname || '管理员' }}
-          <span class="banner__emoji">👋</span>
-        </h1>
-        <p class="banner__desc">
-          统计区间：{{ stats?.periodLabel || '本月' }}
-          <el-tag v-if="stats?.pendingAuditCount" type="warning" size="small" effect="light">
-            {{ stats.pendingAuditCount }} 张单据待审核
-          </el-tag>
-        </p>
-      </div>
-      <div class="banner__side">
-        <div class="banner__date">{{ today }}</div>
-        <div class="banner__week">{{ week }}</div>
-      </div>
+  <div class="page-container dash">
+    <!-- 顶部信息条 -->
+    <div class="dash-bar">
+      <span class="dash-bar__title">{{ nickname || '管理员' }}</span>
+      <span class="dash-bar__sep" />
+      <span class="dash-bar__item">统计区间：{{ stats?.periodLabel || '本月' }}</span>
+      <el-tag v-if="stats?.pendingAuditCount" type="warning" size="small" effect="plain">
+        {{ stats.pendingAuditCount }} 张单据待审核
+      </el-tag>
+      <div class="dash-bar__spacer" />
+      <span class="dash-bar__item">{{ today }} {{ week }}</span>
     </div>
 
     <!-- 待我处理 -->
-    <el-card v-if="stats?.todoItems?.length" shadow="never" class="panel todo-panel">
+    <el-card v-if="stats?.todoItems?.length" shadow="never" class="panel">
       <template #header>
-        <div class="panel__header">
-          <span class="section-title">待我处理</span>
-          <span class="section-hint">点击卡片直达业务页面</span>
-        </div>
+        <span class="section-title">待我处理</span>
+        <span class="section-hint">点击直达业务页面</span>
       </template>
       <div class="todo-grid">
         <div
@@ -37,67 +25,46 @@
           class="todo-card"
           @click="router.push(item.route)"
         >
-          <div class="todo-card__count">{{ item.count }}</div>
-          <div class="todo-card__title">{{ item.title }}</div>
+          <span class="todo-card__count">{{ item.count }}</span>
+          <span class="todo-card__title">{{ item.title }}</span>
         </div>
       </div>
     </el-card>
 
     <!-- 核心经营指标 -->
-    <div class="stat-grid">
-      <div class="stat-card stat-card--primary">
-        <div class="stat-card__icon"><el-icon :size="22"><Money /></el-icon></div>
-        <div class="stat-card__body">
-          <span class="stat-card__label">本期销售额</span>
-          <span class="stat-card__value">{{ formatAmount(stats?.salesAmount) }}</span>
-        </div>
-      </div>
-      <div class="stat-card stat-card--success">
-        <div class="stat-card__icon"><el-icon :size="22"><ShoppingCart /></el-icon></div>
-        <div class="stat-card__body">
-          <span class="stat-card__label">本期采购额</span>
-          <span class="stat-card__value">{{ formatAmount(stats?.purchaseAmount) }}</span>
-        </div>
-      </div>
-      <div class="stat-card stat-card--warning">
-        <div class="stat-card__icon"><el-icon :size="22"><Box /></el-icon></div>
-        <div class="stat-card__body">
-          <span class="stat-card__label">库存总金额</span>
-          <span class="stat-card__value">{{ formatAmount(stats?.stockAmount) }}</span>
-        </div>
-      </div>
-      <div class="stat-card stat-card--danger">
-        <div class="stat-card__icon"><el-icon :size="22"><Wallet /></el-icon></div>
-        <div class="stat-card__body">
-          <span class="stat-card__label">应收余额</span>
-          <span class="stat-card__value">{{ formatAmount(stats?.receivableAmount) }}</span>
-        </div>
-      </div>
-      <div class="stat-card stat-card--info">
-        <div class="stat-card__icon"><el-icon :size="22"><Tickets /></el-icon></div>
-        <div class="stat-card__body">
-          <span class="stat-card__label">应付余额</span>
-          <span class="stat-card__value">{{ formatAmount(stats?.payableAmount) }}</span>
-        </div>
-      </div>
-      <div class="stat-card stat-card--purple">
-        <div class="stat-card__icon"><el-icon :size="22"><SetUp /></el-icon></div>
-        <div class="stat-card__body">
-          <span class="stat-card__label">在制工单</span>
-          <span class="stat-card__value">{{ stats?.wipMoCount ?? 0 }}</span>
-        </div>
-      </div>
-    </div>
+    <el-card shadow="never" class="panel">
+      <template #header>
+        <span class="section-title">核心经营指标</span>
+      </template>
+      <table class="metric-table">
+        <tbody>
+          <tr>
+            <td class="metric-table__label">本期销售额</td>
+            <td class="metric-table__value">{{ formatAmount(stats?.salesAmount) }}</td>
+            <td class="metric-table__label">本期采购额</td>
+            <td class="metric-table__value">{{ formatAmount(stats?.purchaseAmount) }}</td>
+            <td class="metric-table__label">库存总金额</td>
+            <td class="metric-table__value">{{ formatAmount(stats?.stockAmount) }}</td>
+          </tr>
+          <tr>
+            <td class="metric-table__label">应收余额</td>
+            <td class="metric-table__value">{{ formatAmount(stats?.receivableAmount) }}</td>
+            <td class="metric-table__label">应付余额</td>
+            <td class="metric-table__value">{{ formatAmount(stats?.payableAmount) }}</td>
+            <td class="metric-table__label">在制工单</td>
+            <td class="metric-table__value">{{ stats?.wipMoCount ?? 0 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </el-card>
 
-    <el-row :gutter="16">
+    <el-row :gutter="8">
       <!-- 销售趋势 -->
       <el-col :xs="24" :lg="14">
         <el-card shadow="never" class="panel">
           <template #header>
-            <div class="panel__header">
-              <span class="section-title">本年销售趋势</span>
-              <span class="section-hint">单位：元</span>
-            </div>
+            <span class="section-title">本年销售趋势</span>
+            <span class="section-hint">单位：元</span>
           </template>
           <div v-if="trendPoints.length" class="chart">
             <div class="chart__bars">
@@ -113,7 +80,7 @@
               </div>
             </div>
           </div>
-          <el-empty v-else description="暂无销售数据" :image-size="80" />
+          <el-empty v-else description="暂无销售数据" :image-size="60" />
         </el-card>
       </el-col>
 
@@ -121,10 +88,8 @@
       <el-col :xs="24" :lg="10">
         <el-card shadow="never" class="panel">
           <template #header>
-            <div class="panel__header">
-              <span class="section-title">库存金额 TOP</span>
-              <span class="section-hint">前 {{ stats?.stockTop?.length || 0 }} 项</span>
-            </div>
+            <span class="section-title">库存金额 TOP</span>
+            <span class="section-hint">前 {{ stats?.stockTop?.length || 0 }} 项</span>
           </template>
           <div v-if="stats?.stockTop?.length" class="rank-list">
             <div
@@ -132,30 +97,26 @@
               :key="item.name"
               class="rank-item"
             >
-              <span class="rank-item__index" :class="{ 'rank-item__index--top': index < 3 }">
-                {{ index + 1 }}
-              </span>
+              <span class="rank-item__index">{{ index + 1 }}</span>
               <span class="rank-item__name">{{ item.name }}</span>
               <span class="rank-item__extra">{{ item.extra }}</span>
               <span class="rank-item__amount">{{ formatAmount(item.amount) }}</span>
             </div>
           </div>
-          <el-empty v-else description="暂无库存数据" :image-size="80" />
+          <el-empty v-else description="暂无库存数据" :image-size="60" />
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="16">
+    <el-row :gutter="8">
       <!-- 逾期应收 TOP -->
       <el-col :xs="24" :lg="12">
         <el-card shadow="never" class="panel">
           <template #header>
-            <div class="panel__header">
-              <span class="section-title">逾期应收 TOP</span>
-              <el-button link type="primary" @click="router.push('/ar/aging')">
-                查看账龄分析<el-icon><ArrowRight /></el-icon>
-              </el-button>
-            </div>
+            <span class="section-title">逾期应收 TOP</span>
+            <el-button link type="primary" size="small" @click="router.push('/ar/aging')">
+              查看账龄分析<el-icon><ArrowRight /></el-icon>
+            </el-button>
           </template>
           <div v-if="stats?.overdueTop?.length" class="rank-list">
             <div
@@ -163,15 +124,13 @@
               :key="item.name"
               class="rank-item"
             >
-              <span class="rank-item__index" :class="{ 'rank-item__index--top': index < 3 }">
-                {{ index + 1 }}
-              </span>
+              <span class="rank-item__index">{{ index + 1 }}</span>
               <span class="rank-item__name">{{ item.name }}</span>
               <span class="rank-item__extra">{{ item.extra }}</span>
               <span class="rank-item__amount">{{ formatAmount(item.amount) }}</span>
             </div>
           </div>
-          <el-empty v-else description="没有逾期应收，很好" :image-size="80" />
+          <el-empty v-else description="没有逾期应收" :image-size="60" />
         </el-card>
       </el-col>
 
@@ -188,8 +147,7 @@
               class="quick-item"
               @click="router.push(action.path)"
             >
-              <el-icon :size="20" :color="action.color"><component :is="action.icon" /></el-icon>
-              <span>{{ action.label }}</span>
+              {{ action.label }}
             </div>
           </div>
         </el-card>
@@ -202,15 +160,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import {
-  ArrowRight,
-  Box,
-  Money,
-  SetUp,
-  ShoppingCart,
-  Tickets,
-  Wallet
-} from '@element-plus/icons-vue'
+import { ArrowRight } from '@element-plus/icons-vue'
 import { dashboardApi, type DashboardVO } from '@/api/dashboard'
 import { useUserStore } from '@/stores/user'
 
@@ -231,7 +181,7 @@ const loadData = async () => {
 onMounted(loadData)
 
 /**
- * 金额格式化：按万/亿缩写，便于卡片展示。
+ * 金额格式化：按万/亿缩写，便于展示。
  */
 const formatAmount = (value?: number) => {
   if (value === undefined || value === null) return '0.00'
@@ -267,346 +217,266 @@ const barHeight = (amount?: number) => {
   return Math.max(2, Math.round(ratio * 100)) + '%'
 }
 
-const greeting = computed(() => {
-  const hour = new Date().getHours()
-  if (hour < 6) return '凌晨好'
-  if (hour < 9) return '早上好'
-  if (hour < 12) return '上午好'
-  if (hour < 14) return '中午好'
-  if (hour < 18) return '下午好'
-  return '晚上好'
-})
-
 const now = new Date()
 const weekText = ['日', '一', '二', '三', '四', '五', '六']
 const today = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`
 const week = `星期${weekText[now.getDay()]}`
 
 const shortcuts = [
-  { label: '采购订单', path: '/pa/order', color: '#2563eb' },
-  { label: '销售订单', path: '/sa/order', color: '#059669' },
-  { label: '库存查询', path: '/ic/stock', color: '#d97706' },
-  { label: '记账凭证', path: '/fi/voucher', color: '#7c3aed' },
-  { label: '应收账龄', path: '/ar/aging', color: '#dc2626' },
-  { label: 'MRP 运算', path: '/pm/mrp', color: '#0891b2' }
+  { label: '采购订单', path: '/pa/order' },
+  { label: '销售订单', path: '/sa/order' },
+  { label: '库存查询', path: '/ic/stock' },
+  { label: '记账凭证', path: '/fi/voucher' },
+  { label: '应收账龄', path: '/ar/aging' },
+  { label: 'MRP 运算', path: '/pm/mrp' }
 ]
 </script>
 
 <style scoped lang="scss">
-.banner {
-  position: relative;
-  overflow: hidden;
+/* ============================================================
+   工作台 —— 金蝶风格
+   平面数据区：表格化的指标行，无渐变、无彩色图标底
+   ============================================================ */
+
+.dash {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---------- 顶部信息条 ---------- */
+.dash-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 24px 28px;
-  margin-bottom: 16px;
-  border-radius: 12px;
-  background: linear-gradient(120deg, #2563eb 0%, #4f46e5 55%, #7c3aed 100%);
-  color: #fff;
-
-  &__decor {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.12);
-  }
-
-  &__decor--1 {
-    width: 200px;
-    height: 200px;
-    top: -80px;
-    right: 60px;
-  }
-
-  &__decor--2 {
-    width: 120px;
-    height: 120px;
-    bottom: -60px;
-    right: 200px;
-  }
-
-  &__content {
-    position: relative;
-    z-index: 1;
-  }
-
-  &__title {
-    margin: 0 0 6px;
-    font-size: 22px;
-    font-weight: 600;
-  }
-
-  &__desc {
-    margin: 0;
-    font-size: 13px;
-    opacity: 0.92;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  &__side {
-    position: relative;
-    z-index: 1;
-    text-align: right;
-  }
-
-  &__date {
-    font-size: 15px;
-    font-weight: 500;
-  }
-
-  &__week {
-    font-size: 12px;
-    opacity: 0.85;
-  }
+  gap: 10px;
+  height: 32px;
+  padding: 0 10px;
+  background-color: #fff;
+  border: 1px solid var(--el-border-color-light);
+  border-left: 3px solid var(--el-color-primary);
+  font-size: 13px;
 }
 
-.todo-panel {
-  margin-bottom: 16px;
+.dash-bar__title {
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.todo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
+.dash-bar__sep {
+  width: 1px;
+  height: 14px;
+  background-color: var(--el-border-color);
 }
 
-.todo-card {
-  padding: 14px 16px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: var(--el-fill-color-blank);
-
-  &:hover {
-    border-color: var(--el-color-primary);
-    box-shadow: 0 2px 10px rgb(0 0 0 / 8%);
-    transform: translateY(-1px);
-  }
-
-  &__count {
-    font-size: 22px;
-    font-weight: 600;
-    color: var(--el-color-primary);
-    line-height: 1.2;
-  }
-
-  &__title {
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
+.dash-bar__item {
+  color: var(--el-text-color-secondary);
 }
 
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
+.dash-bar__spacer {
+  flex: 1;
 }
 
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 18px;
-  border-radius: 10px;
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color-lighter);
-
-  &__icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    flex-shrink: 0;
-  }
-
-  &__body {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-  }
-
-  &__label {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
-
-  &__value {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  &--primary .stat-card__icon { background: rgb(37 99 235 / 12%); color: #2563eb; }
-  &--success .stat-card__icon { background: rgb(5 150 105 / 12%); color: #059669; }
-  &--warning .stat-card__icon { background: rgb(217 119 6 / 12%); color: #d97706; }
-  &--danger .stat-card__icon { background: rgb(220 38 38 / 12%); color: #dc2626; }
-  &--info .stat-card__icon { background: rgb(8 145 178 / 12%); color: #0891b2; }
-  &--purple .stat-card__icon { background: rgb(124 58 237 / 12%); color: #7c3aed; }
-}
-
+/* ---------- 面板 ---------- */
 .panel {
-  margin-bottom: 16px;
-}
-
-.panel__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  margin-bottom: 0;
 }
 
 .section-title {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--el-text-color-primary);
 }
 
 .section-hint {
+  float: right;
   font-size: 12px;
+  font-weight: 400;
   color: var(--el-text-color-secondary);
 }
 
-.chart {
-  padding: 8px 0;
-
-  &__bars {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    height: 220px;
-  }
-
-  &__bar-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-    height: 100%;
-    min-width: 0;
-  }
-
-  &__bar-value {
-    font-size: 11px;
-    color: var(--el-text-color-secondary);
-    margin-bottom: 4px;
-    white-space: nowrap;
-  }
-
-  &__bar {
-    width: 100%;
-    max-width: 32px;
-    min-height: 2px;
-    border-radius: 4px 4px 0 0;
-    background: linear-gradient(180deg, #4f46e5 0%, #2563eb 100%);
-    transition: height 0.3s;
-  }
-
-  &__bar-label {
-    margin-top: 6px;
-    font-size: 11px;
-    color: var(--el-text-color-secondary);
-    white-space: nowrap;
-  }
+/* ---------- 待我处理 ---------- */
+.todo-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.rank-list {
+.todo-card {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 160px;
+  padding: 8px 12px;
+  border: 1px solid var(--el-border-color-light);
+  background-color: var(--el-fill-color-light);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.todo-card:hover {
+  border-color: var(--el-color-primary);
+  background-color: #e8f0fb;
+}
+
+.todo-card__count {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--el-color-primary);
+}
+
+.todo-card__title {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+}
+
+/* ---------- 指标表 ---------- */
+/* 用表格排布指标，比卡片更接近金蝶的账表观感 */
+.metric-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.metric-table td {
+  padding: 7px 10px;
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+.metric-table__label {
+  width: 110px;
+  background-color: var(--el-fill-color-light);
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.metric-table__value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---------- 柱状图 ---------- */
+.chart {
+  padding: 4px 0;
+}
+
+.chart__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 190px;
+}
+
+.chart__bar-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  min-width: 0;
+}
+
+.chart__bar-value {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+  margin-bottom: 2px;
+}
+
+.chart__bar {
+  width: 70%;
+  max-width: 26px;
+  background-color: var(--el-color-primary);
+  border-radius: 0;
+  transition: background-color 0.15s;
+}
+
+.chart__bar-item:hover .chart__bar {
+  background-color: var(--el-color-primary-light-3);
+}
+
+.chart__bar-label {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+}
+
+/* ---------- 排行榜 ---------- */
+.rank-list {
+  border: 1px solid var(--el-border-color-lighter);
 }
 
 .rank-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 4px;
+  gap: 8px;
+  padding: 6px 10px;
   border-bottom: 1px solid var(--el-border-color-lighter);
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &__index {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    background: var(--el-fill-color);
-    color: var(--el-text-color-secondary);
-    flex-shrink: 0;
-
-    &--top {
-      background: var(--el-color-primary);
-      color: #fff;
-    }
-  }
-
-  &__name {
-    flex: 1;
-    font-size: 13px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  &__extra {
-    font-size: 11px;
-    color: var(--el-text-color-secondary);
-    flex-shrink: 0;
-  }
-
-  &__amount {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-    min-width: 90px;
-    text-align: right;
-  }
+  font-size: 13px;
 }
 
+.rank-item:last-child {
+  border-bottom: none;
+}
+
+.rank-item__index {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--el-fill-color);
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
+.rank-item__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-item__extra {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.rank-item__amount {
+  min-width: 90px;
+  text-align: right;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---------- 快捷入口 ---------- */
 .quick-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px;
 }
 
 .quick-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 8px;
-  border-radius: 8px;
-  border: 1px solid var(--el-border-color-lighter);
+  padding: 8px 4px;
+  border: 1px solid var(--el-border-color-light);
+  background-color: var(--el-fill-color-light);
+  text-align: center;
+  font-size: 13px;
+  color: var(--el-text-color-regular);
   cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s;
+  transition: all 0.15s;
+}
 
-  &:hover {
-    border-color: var(--el-color-primary);
-    background: var(--el-fill-color-light);
-  }
+.quick-item:hover {
+  border-color: var(--el-color-primary);
+  background-color: #e8f0fb;
+  color: var(--el-color-primary);
 }
 </style>
-
-
-
-
-
-
-
-
