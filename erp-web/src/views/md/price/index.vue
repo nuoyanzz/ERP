@@ -285,14 +285,15 @@ const handleDelete = (row: PriceVO) => {
 }
 
 onMounted(async () => {
-  const [customerList, supplierList, materialList] = await Promise.all([
-    customerApi.list(),
-    supplierApi.list(),
-    materialApi.list()
+  // 后端主数据只提供 /page 分页接口，这里取较大分页作为下拉数据源
+  const [customerData, supplierData, materialData] = await Promise.all([
+    customerApi.page({ pageNum: 1, pageSize: 500 }),
+    supplierApi.page({ pageNum: 1, pageSize: 500 }),
+    materialApi.page({ pageNum: 1, pageSize: 500 })
   ])
-  customers.value = customerList
-  suppliers.value = supplierList
-  materials.value = materialList
+  customers.value = customerData.records
+  suppliers.value = supplierData.records
+  materials.value = materialData.records
   loadData()
 })
 </script>

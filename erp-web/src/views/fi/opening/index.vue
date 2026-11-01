@@ -31,10 +31,10 @@
         <el-table-column prop="accountName" label="科目名称" min-width="160" />
         <el-table-column prop="period" label="期间" width="100" />
         <el-table-column prop="currency" label="币别" width="80" />
-        <el-table-column label="借方余额" width="130" align="right">
+        <el-table-column prop="debitAmount" label="借方余额" width="130" align="right">
           <template #default="{ row }">{{ Number(row.debitAmount || 0).toFixed(2) }}</template>
         </el-table-column>
-        <el-table-column label="贷方余额" width="130" align="right">
+        <el-table-column prop="creditAmount" label="贷方余额" width="130" align="right">
           <template #default="{ row }">{{ Number(row.creditAmount || 0).toFixed(2) }}</template>
         </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">
@@ -89,22 +89,22 @@
         show-summary :summary-method="getTrialSummaries">
         <el-table-column prop="accountCode" label="科目编码" min-width="120" />
         <el-table-column prop="accountName" label="科目名称" min-width="140" />
-        <el-table-column label="期初借方" width="110" align="right">
+        <el-table-column prop="openingDebit" label="期初借方" width="110" align="right">
           <template #default="{ row }">{{ Number(row.openingDebit || 0).toFixed(2) }}</template>
         </el-table-column>
-        <el-table-column label="期初贷方" width="110" align="right">
+        <el-table-column prop="openingCredit" label="期初贷方" width="110" align="right">
           <template #default="{ row }">{{ Number(row.openingCredit || 0).toFixed(2) }}</template>
         </el-table-column>
-        <el-table-column label="本期借方" width="110" align="right">
+        <el-table-column prop="debitAmount" label="本期借方" width="110" align="right">
           <template #default="{ row }">{{ Number(row.debitAmount || 0).toFixed(2) }}</template>
         </el-table-column>
-        <el-table-column label="本期贷方" width="110" align="right">
+        <el-table-column prop="creditAmount" label="本期贷方" width="110" align="right">
           <template #default="{ row }">{{ Number(row.creditAmount || 0).toFixed(2) }}</template>
         </el-table-column>
-        <el-table-column label="期末借方" width="110" align="right">
+        <el-table-column prop="closingDebit" label="期末借方" width="110" align="right">
           <template #default="{ row }">{{ Number(row.closingDebit || 0).toFixed(2) }}</template>
         </el-table-column>
-        <el-table-column label="期末贷方" width="110" align="right">
+        <el-table-column prop="closingCredit" label="期末贷方" width="110" align="right">
           <template #default="{ row }">{{ Number(row.closingCredit || 0).toFixed(2) }}</template>
         </el-table-column>
       </el-table>
