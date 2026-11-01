@@ -5,7 +5,9 @@ import com.erp.security.SecurityUtils;
 import com.erp.system.annotation.OperLog;
 import com.erp.system.domain.entity.SysOperLog;
 import com.erp.system.mapper.SysOperLogMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -16,7 +18,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 操作日志切面。记录写操作的请求参数、结果与耗时。
@@ -30,6 +34,18 @@ import java.util.Arrays;
 public class OperLogAspect {
 
     private static final int MAX_TEXT_LENGTH = 2000;
+
+    /**
+     * 需要脱敏的字段名。命中这些名字的参数在写日志前替换为掩码，
+     * 避免明文口令、令牌落进操作日志表。
+     */
+    private static final Set<String> SENSITIVE_FIELDS = Set.of(
+            "password", "oldpassword", "newpassword", "confirmpassword",
+            "passwd", "pwd", "secret", "token", "accesstoken", "refreshtoken"
+    );
+
+    /** 脱敏后的占位值 */
+    private static final String MASK = "******";
 
     private final SysOperLogMapper operLogMapper;
     private final ObjectMapper objectMapper;
@@ -100,10 +116,61 @@ public class OperLogAspect {
             return null;
         }
         try {
-            return objectMapper.writeValueAsString(value);
+            return objectMapper.writeValueAsString(maskSensitive(value));
         } catch (Exception e) {
             return String.valueOf(value);
         }
+    }
+
+    /**
+     * 脱敏敏感字段。
+     * <p>
+     * 请求参数以 POJO 或 Map 形式传入，这里先转成树形结构，
+     * 递归替换掉命中敏感字段名的值，再序列化。
+     */
+    private Object maskSensitive(Object value) {
+        try {
+            JsonNode node = objectMapper.valueToTree(value);
+            maskNode(node);
+            return node;
+        } catch (Exception e) {
+            return value;
+        }
+    }
+
+    private void maskNode(JsonNode node) {
+        if (node == null) {
+            return;
+        }
+        if (node.isObject()) {
+            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                if (isSensitive(entry.getKey()) && entry.getValue().isValueNode()) {
+                    ((ObjectNode) node).put(entry.getKey(), MASK);
+                } else {
+                    maskNode(entry.getValue());
+                }
+            }
+        } else if (node.isArray()) {
+            for (JsonNode child : node) {
+                maskNode(child);
+            }
+        }
+    }
+
+    private boolean isSensitive(String fieldName) {
+        if (fieldName == null) {
+            return false;
+        }
+        // 去掉下划线与连字符后再比对，兼容 old_password / oldPassword 两种写法
+        String normalized = fieldName.toLowerCase().replace("_", "").replace("-", "");
+        for (String sensitive : SENSITIVE_FIELDS) {
+            if (normalized.equals(sensitive.replace("_", ""))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String truncate(String text) {
