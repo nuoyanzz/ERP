@@ -168,7 +168,17 @@ npm install
 npm run dev
 ```
 
-默认账号 `admin / admin123`（首次启动自动创建）。
+### 5.1 配置初始管理员
+
+管理员口令**不设默认值**，必须由部署方通过环境变量指定：
+
+```bash
+export ERP_ADMIN_PASSWORD='你的初始口令'
+export JWT_SECRET='至少 32 字节的随机密钥'
+```
+
+未配置 `ERP_ADMIN_PASSWORD` 时应用不会创建管理员账号，需要在系统管理中手工建号。
+`JWT_SECRET` 未配置或长度不足时应用拒绝签发令牌——固定密钥等同于任何人都能伪造登录态。
 
 ### 6. 一键验证
 
@@ -186,14 +196,19 @@ java -cp "target/classes;target/test-classes;$(cat target/cp.txt)" \
   com.erp.tools.WorkflowE2ETest
 ```
 
-### 7. 演示账号
+### 7. 演示账号（可选）
 
-密码统一为 `admin123`。
+演示账号使用统一口令，因此**不放进初始化流程**，需要时单独导入：
+
+```bash
+mysql -uroot -p erp < erp-server/src/main/resources/db/seed/demo_accounts.sql
+```
+
+口令统一为 `admin123`。
 
 | 账号 | 角色 | 数据范围 | 说明 |
 |------|------|----------|------|
-| admin | 超级管理员 | 全部 | 绕过审批流与数据范围 |
-| finance | 财务主管 | 全部 | 财务模块 + 审批 |
+| admin | 超级管理员 | 全部 | 由 `ERP_ADMIN_PASSWORD` 指定 |
 | purchaser | 采购员 | 本部门 | 采购模块 + 审批 |
 | seller | 销售员 | 本部门 | 销售模块 + 审批 |
 | warehouse | 仓管员 | 本部门及以下 | 库存模块 + 审批 |
