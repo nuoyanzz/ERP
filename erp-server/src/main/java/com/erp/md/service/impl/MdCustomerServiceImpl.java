@@ -37,6 +37,14 @@ public class MdCustomerServiceImpl extends ServiceImpl<MdCustomerMapper, MdCusto
     }
 
     @Override
+    public List<CustomerVO> listMdCustomer() {
+        return this.list(Wrappers.<MdCustomer>lambdaQuery()
+                .eq(MdCustomer::getStatus, 0)
+                .orderByAsc(MdCustomer::getId))
+                .stream().map(this::toVO).collect(Collectors.toList());
+    }
+
+    @Override
     public CustomerVO getCustomerDetail(Long id) {
         MdCustomer customer = this.getById(id);
         if (customer == null) {

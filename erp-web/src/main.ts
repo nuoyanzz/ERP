@@ -10,7 +10,8 @@ import 'element-plus/dist/index.css'
 import './styles/index.css'
 import './styles/element-plus.css'
 
-const app = createApp()
+// 根组件必须传给 createApp，否则挂载后渲染为空页
+const app = createApp(App)
 
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)

@@ -3,6 +3,9 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 /**
  * 静态路由：无需权限即可访问。
  * 业务页面由后端菜单驱动，在登录后动态挂载。
+ * <p>
+ * 除登录页外，所有页面都挂在 Layout 之下，由它统一渲染侧边栏与顶栏；
+ * 业务路由作为 Layout 的子路由，其 router-view 负责渲染页面本体。
  */
 export const constantRoutes: RouteRecordRaw[] = [
   {
@@ -13,9 +16,16 @@ export const constantRoutes: RouteRecordRaw[] = [
   },
   {
     path: '/',
-    name: 'Dashboard',
-    component: () => import('@/views/dashboard/index.vue'),
-    meta: { title: '工作台', icon: 'dashboard' }
+    name: 'Layout',
+    component: () => import('@/layout/index.vue'),
+    children: [
+      {
+        path: '',
+        name: 'Dashboard',
+        component: () => import('@/views/dashboard/index.vue'),
+        meta: { title: '工作台', icon: 'dashboard' }
+      }
+    ]
   }
 ]
 
@@ -115,7 +125,15 @@ export function mountBusinessRoutes(menus: MenuNode[]) {
   }
 
   walk(menus, '')
-  routes.forEach((route) => router.addRoute(route))
+  // 业务页面挂到 Layout 之下，保证侧边栏与顶栏在所有页面都存在
+  const hasLayout = router.getRoutes().some((route) => route.name === 'Layout')
+  routes.forEach((route) => {
+    if (hasLayout) {
+      router.addRoute('Layout' as never, route)
+    } else {
+      router.addRoute(route)
+    }
+  })
   return routes
 }
 

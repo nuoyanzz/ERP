@@ -1,5 +1,6 @@
 package com.erp.md.controller;
 
+import java.util.List;
 import com.erp.common.api.PageResult;
 import com.erp.common.api.Result;
 import com.erp.md.domain.dto.MaterialQueryRequest;
@@ -31,6 +32,13 @@ public class MdMaterialController {
     @OperLog(module = "md")
     public Result<PageResult<MaterialVO>> page(MaterialQueryRequest request) {
         return Result.ok(materialService.pageMaterial(request));
+    }
+
+    @GetMapping("/list")
+    @RequiresPermission("md:material:query")
+    @OperLog(module = "md")
+    public Result<List<MaterialVO>> list() {
+        return Result.ok(materialService.listMdMaterial());
     }
 
     @GetMapping("/{id}")

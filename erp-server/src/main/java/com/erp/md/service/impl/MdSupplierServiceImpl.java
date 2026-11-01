@@ -37,6 +37,14 @@ public class MdSupplierServiceImpl extends ServiceImpl<MdSupplierMapper, MdSuppl
     }
 
     @Override
+    public List<SupplierVO> listMdSupplier() {
+        return this.list(Wrappers.<MdSupplier>lambdaQuery()
+                .eq(MdSupplier::getStatus, 0)
+                .orderByAsc(MdSupplier::getId))
+                .stream().map(this::toVO).collect(Collectors.toList());
+    }
+
+    @Override
     public SupplierVO getSupplierDetail(Long id) {
         MdSupplier supplier = this.getById(id);
         if (supplier == null) {

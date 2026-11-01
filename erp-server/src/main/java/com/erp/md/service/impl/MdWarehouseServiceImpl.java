@@ -38,6 +38,14 @@ public class MdWarehouseServiceImpl extends ServiceImpl<MdWarehouseMapper, MdWar
     }
 
     @Override
+    public List<WarehouseVO> listMdWarehouse() {
+        return this.list(Wrappers.<MdWarehouse>lambdaQuery()
+                .eq(MdWarehouse::getStatus, 0)
+                .orderByAsc(MdWarehouse::getId))
+                .stream().map(this::toVO).collect(Collectors.toList());
+    }
+
+    @Override
     public WarehouseVO getWarehouseDetail(Long id) {
         MdWarehouse warehouse = this.getById(id);
         if (warehouse == null) {

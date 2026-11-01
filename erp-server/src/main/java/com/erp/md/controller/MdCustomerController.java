@@ -1,5 +1,6 @@
 package com.erp.md.controller;
 
+import java.util.List;
 import com.erp.common.api.PageResult;
 import com.erp.common.api.Result;
 import com.erp.md.domain.dto.CustomerQueryRequest;
@@ -31,6 +32,13 @@ public class MdCustomerController {
     @OperLog(module = "md")
     public Result<PageResult<CustomerVO>> page(CustomerQueryRequest request) {
         return Result.ok(customerService.pageCustomer(request));
+    }
+
+    @GetMapping("/list")
+    @RequiresPermission("md:customer:query")
+    @OperLog(module = "md")
+    public Result<List<CustomerVO>> list() {
+        return Result.ok(customerService.listMdCustomer());
     }
 
     @GetMapping("/{id}")

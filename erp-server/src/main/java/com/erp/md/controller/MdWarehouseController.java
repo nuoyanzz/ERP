@@ -1,5 +1,6 @@
 package com.erp.md.controller;
 
+import java.util.List;
 import com.erp.common.api.PageResult;
 import com.erp.common.api.Result;
 import com.erp.md.domain.dto.WarehouseQueryRequest;
@@ -31,6 +32,13 @@ public class MdWarehouseController {
     @OperLog(module = "md")
     public Result<PageResult<WarehouseVO>> page(WarehouseQueryRequest request) {
         return Result.ok(warehouseService.pageWarehouse(request));
+    }
+
+    @GetMapping("/list")
+    @RequiresPermission("md:warehouse:query")
+    @OperLog(module = "md")
+    public Result<List<WarehouseVO>> list() {
+        return Result.ok(warehouseService.listMdWarehouse());
     }
 
     @GetMapping("/{id}")

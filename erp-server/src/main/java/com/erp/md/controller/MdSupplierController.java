@@ -1,5 +1,6 @@
 package com.erp.md.controller;
 
+import java.util.List;
 import com.erp.common.api.PageResult;
 import com.erp.common.api.Result;
 import com.erp.md.domain.dto.SupplierQueryRequest;
@@ -31,6 +32,13 @@ public class MdSupplierController {
     @OperLog(module = "md")
     public Result<PageResult<SupplierVO>> page(SupplierQueryRequest request) {
         return Result.ok(supplierService.pageSupplier(request));
+    }
+
+    @GetMapping("/list")
+    @RequiresPermission("md:supplier:query")
+    @OperLog(module = "md")
+    public Result<List<SupplierVO>> list() {
+        return Result.ok(supplierService.listMdSupplier());
     }
 
     @GetMapping("/{id}")

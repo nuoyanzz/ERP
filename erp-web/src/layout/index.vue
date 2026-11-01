@@ -143,6 +143,36 @@ watch(
   height: calc(100vh - 56px);
 }
 
+/* 侧边栏是深色底，菜单文字需改为浅色，否则在深色背景上几乎不可读 */
+.layout__aside :deep(.el-menu) {
+  background-color: transparent;
+  border-right: none;
+}
+
+.layout__aside :deep(.el-menu-item),
+.layout__aside :deep(.el-sub-menu__title) {
+  color: rgb(255 255 255 / 72%);
+}
+
+.layout__aside :deep(.el-menu-item:hover),
+.layout__aside :deep(.el-sub-menu__title:hover) {
+  color: #fff;
+  background-color: rgb(255 255 255 / 6%);
+}
+
+.layout__aside :deep(.el-menu-item.is-active) {
+  color: #fff;
+  background-color: var(--el-color-primary);
+}
+
+.layout__aside :deep(.el-sub-menu.is-active > .el-sub-menu__title) {
+  color: #fff;
+}
+
+.layout__aside :deep(.el-sub-menu .el-menu) {
+  background-color: rgb(0 0 0 / 16%);
+}
+
 .layout__main {
   min-width: 0;
 }

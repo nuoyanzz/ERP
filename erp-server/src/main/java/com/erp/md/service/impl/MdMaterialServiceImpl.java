@@ -38,6 +38,14 @@ public class MdMaterialServiceImpl extends ServiceImpl<MdMaterialMapper, MdMater
     }
 
     @Override
+    public List<MaterialVO> listMdMaterial() {
+        return this.list(Wrappers.<MdMaterial>lambdaQuery()
+                .eq(MdMaterial::getStatus, 0)
+                .orderByAsc(MdMaterial::getId))
+                .stream().map(this::toVO).collect(Collectors.toList());
+    }
+
+    @Override
     public MaterialVO getMaterialDetail(Long id) {
         MdMaterial material = this.getById(id);
         if (material == null) {
