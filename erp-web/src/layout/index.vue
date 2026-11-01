@@ -1,82 +1,154 @@
 <template>
-  <el-container class="layout">
-    <!-- 侧边栏 -->
-    <el-aside :width="collapsed ? '64px' : '210px'" class="layout__aside">
-      <div class="layout__logo">
-        <el-icon :size="20"><Setting /></el-icon>
-        <span v-if="!collapsed" class="layout__logo-text">ERP 管理系统</span>
+  <div class="kd-layout">
+    <!-- ============ 顶部：品牌条 + 模块功能条 ============ -->
+    <header class="kd-topbar">
+      <div class="kd-topbar__brand">
+        <el-icon :size="18"><Setting /></el-icon>
+        <span class="kd-topbar__logo-text">ERP 管理系统</span>
       </div>
-      <el-scrollbar class="layout__menu-scroll">
-        <el-menu
-          :default-active="activePath"
-          :collapse="collapsed"
-          :unique-opened="false"
-          router
-          background-color="transparent"
+
+      <!-- 模块级功能条：点击切换左侧树 -->
+      <nav class="kd-modbar">
+        <button
+          v-for="mod in modules"
+          :key="mod.id"
+          type="button"
+          class="kd-modbar__item"
+          :class="{ 'is-active': activeModuleId === mod.id }"
+          @click="switchModule(mod)"
         >
-          <sidebar-item v-for="node in menus" :key="node.id" :node="node" />
-        </el-menu>
-      </el-scrollbar>
-    </el-aside>
+          {{ mod.menuName }}
+        </button>
+      </nav>
 
-    <el-container class="layout__main">
-      <!-- 顶栏 -->
-      <el-header class="layout__header">
-        <div class="layout__header-left">
-          <el-icon class="layout__collapse" @click="collapsed = !collapsed">
-            <Fold v-if="!collapsed" />
-            <Expand v-else />
-          </el-icon>
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item v-for="(item, index) in breadcrumbs" :key="index">
-              {{ item }}
-            </el-breadcrumb-item>
-          </el-breadcrumb>
-        </div>
-        <div class="layout__header-right">
-          <el-tooltip content="退出登录" placement="bottom">
-            <el-dropdown @command="handleCommand">
-              <span class="layout__user">
-                <el-avatar :size="28">{{ (nickname || 'U').charAt(0) }}</el-avatar>
-                <span class="layout__user-name">{{ nickname }}</span>
-                <el-icon><ArrowDown /></el-icon>
-              </span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="logout">退出登录</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </el-tooltip>
-        </div>
-      </el-header>
+      <div class="kd-topbar__right">
+        <el-tooltip content="退出登录" placement="bottom">
+          <el-dropdown @command="handleCommand">
+            <span class="kd-topbar__user">
+              <el-avatar :size="22">{{ (nickname || 'U').charAt(0) }}</el-avatar>
+              <span class="kd-topbar__user-name">{{ nickname }}</span>
+              <el-icon><ArrowDown /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </el-tooltip>
+      </div>
+    </header>
 
-      <!-- 内容区 -->
-      <el-main class="layout__content">
-        <router-view v-slot="{ Component }">
-          <keep-alive :max="8">
-            <component :is="Component" :key="routeKey" />
-          </keep-alive>
-        </router-view>
-      </el-main>
-    </el-container>
-  </el-container>
+    <div class="kd-body">
+      <!-- ============ 左侧：模块内的功能树 ============ -->
+      <aside v-if="sidebarVisible" class="kd-sidebar">
+        <div class="kd-sidebar__title">
+          {{ activeModuleName }}
+        </div>
+        <el-scrollbar class="kd-sidebar__scroll">
+          <el-menu
+            :default-active="activePath"
+            :unique-opened="false"
+            router
+            class="kd-sidebar__menu"
+          >
+            <sidebar-item v-for="node in sidebarMenus" :key="node.id" :node="node" />
+          </el-menu>
+        </el-scrollbar>
+      </aside>
+
+      <!-- ============ 右侧：工作区 ============ -->
+      <main class="kd-workspace">
+        <!-- 工作区页签 -->
+        <div class="kd-tabs">
+          <div class="kd-tabs__crumb">
+            {{ breadcrumbs.join(' / ') }}
+          </div>
+        </div>
+
+        <div class="kd-workspace__body">
+          <router-view v-slot="{ Component }">
+            <keep-alive :max="8">
+              <component :is="Component" :key="routeKey" />
+            </keep-alive>
+          </router-view>
+        </div>
+      </main>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import { ArrowDown, Expand, Fold, Setting } from '@element-plus/icons-vue'
+import { ArrowDown, Setting } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import SidebarItem from './components/SidebarItem.vue'
+
+interface MenuNode {
+  id: number
+  parentId: number
+  menuName: string
+  menuType: number
+  path?: string | null
+  component?: string | null
+  icon?: string | null
+  children?: MenuNode[]
+}
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const collapsed = ref(false)
 
-const menus = computed(() => userStore.menus || [])
+const menus = computed<MenuNode[]>(() => (userStore.menus as MenuNode[]) || [])
+
+/**
+ * 顶部功能条：一级节点即模块。
+ * 工作台是菜单类型 2 的独立页面，其余是目录（类型 1），都作为模块入口。
+ */
+const modules = computed(() => menus.value.filter((node) => node.menuType === 1 || node.menuType === 2))
+
+/**
+ * 当前激活的模块：优先按路由路径反查所属目录，其次取第一个模块。
+ */
+const activeModuleId = computed(() => {
+  const path = route.path
+  const hit = modules.value.find((mod) => {
+    if (mod.menuType === 2) {
+      return path === mod.path || path.startsWith(`${mod.path}/`)
+    }
+    return path === mod.path || path.startsWith(`${mod.path}/`)
+  })
+  return hit ? hit.id : modules.value.length ? modules.value[0].id : 0
+})
+
+const activeModuleName = computed(() => {
+  const mod = modules.value.find((m) => m.id === activeModuleId.value)
+  return mod ? mod.menuName : '功能菜单'
+})
+
+/**
+ * 左侧树：只展示当前模块下的二级菜单。
+ * 目录本身作为分组标题，其子节点渲染为可点击项。
+ */
+const sidebarMenus = computed<MenuNode[]>(() => {
+  const mod = modules.value.find((m) => m.id === activeModuleId.value)
+  if (!mod || mod.menuType === 2) {
+    return []
+  }
+  return (mod.children || []).filter((child) => child.menuType === 2)
+})
+
+/**
+ * 工作台这类单页模块没有下级菜单，此时收起左侧树，
+ * 让工作台独占整个宽度，避免出现空白的树面板。
+ */
+const sidebarVisible = computed(() => {
+  const mod = modules.value.find((m) => m.id === activeModuleId.value)
+  return !!mod && mod.menuType === 1 && sidebarMenus.value.length > 0
+})
+
 const nickname = computed(() => userStore.nickname)
 
 const activePath = computed(() => route.path)
@@ -84,15 +156,30 @@ const activePath = computed(() => route.path)
 const routeKey = computed(() => route.fullPath)
 
 /**
- * 面包屑：取路由匹配链上的标题，最后一段是当前页面。
+ * 面包屑：模块名 + 页面名。
  */
 const breadcrumbs = computed(() => {
   const matched = route.matched.filter((item) => item.meta?.title)
-  if (matched.length === 0 && route.meta?.title) {
-    return [route.meta.title as string]
-  }
-  return matched.map((item) => item.meta?.title as string)
+  const titles = matched.map((item) => item.meta?.title as string)
+  return titles.length ? titles : [activeModuleName.value]
 })
+
+/**
+ * 切换模块：跳到该模块的第一个可用页面。
+ */
+const switchModule = (mod: MenuNode) => {
+  if (activeModuleId.value === mod.id) {
+    return
+  }
+  if (mod.menuType === 2 && mod.path) {
+    router.push(mod.path)
+    return
+  }
+  const first = (mod.children || []).find((child) => child.menuType === 2 && child.path)
+  if (first?.path) {
+    router.push(first.path.startsWith('/') ? first.path : `/${first.path}`)
+  }
+}
 
 const handleCommand = async (command: string) => {
   if (command !== 'logout') {
@@ -103,130 +190,206 @@ const handleCommand = async (command: string) => {
   router.push('/login')
 }
 
-watch(
-  () => route.path,
-  () => {
-    collapsed.value = false
-  }
-)
 </script>
 
 <style scoped lang="scss">
-.layout {
+/* ============================================================
+   金蝶风格三段式布局
+   顶部模块功能条 + 左侧功能树 + 右侧工作区
+   平面、紧凑、靠边框分区
+   ============================================================ */
+
+.kd-layout {
+  display: flex;
+  flex-direction: column;
   height: 100vh;
-}
-
-.layout__aside {
-  background-color: #1f2a3d;
-  transition: width 0.2s;
   overflow: hidden;
 }
 
-.layout__logo {
+/* ---------- 顶部 ---------- */
+.kd-topbar {
+  display: flex;
+  align-items: stretch;
+  height: 38px;
+  flex-shrink: 0;
+  background-color: #1a5fb4;
+  color: #fff;
+}
+
+.kd-topbar__brand {
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 56px;
-  padding: 0 18px;
-  color: #fff;
+  gap: 6px;
+  padding: 0 14px;
+  flex-shrink: 0;
+  background-color: #154a8c;
+  font-size: 14px;
   font-weight: 600;
-  font-size: 15px;
   white-space: nowrap;
-  border-bottom: 1px solid rgb(255 255 255 / 6%);
 }
 
-.layout__logo-text {
-  overflow: hidden;
+.kd-topbar__logo-text {
+  letter-spacing: 0.5px;
 }
 
-.layout__menu-scroll {
-  height: calc(100vh - 56px);
-}
-
-/* 侧边栏是深色底，菜单文字需改为浅色，否则在深色背景上几乎不可读 */
-.layout__aside :deep(.el-menu) {
-  background-color: transparent;
-  border-right: none;
-}
-
-.layout__aside :deep(.el-menu-item),
-.layout__aside :deep(.el-sub-menu__title) {
-  color: rgb(255 255 255 / 72%);
-}
-
-.layout__aside :deep(.el-menu-item:hover),
-.layout__aside :deep(.el-sub-menu__title:hover) {
-  color: #fff;
-  background-color: rgb(255 255 255 / 6%);
-}
-
-.layout__aside :deep(.el-menu-item.is-active) {
-  color: #fff;
-  background-color: var(--el-color-primary);
-}
-
-.layout__aside :deep(.el-sub-menu.is-active > .el-sub-menu__title) {
-  color: #fff;
-}
-
-.layout__aside :deep(.el-sub-menu .el-menu) {
-  background-color: rgb(0 0 0 / 16%);
-}
-
-.layout__main {
+/* 模块功能条 */
+.kd-modbar {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
   min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.layout__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 56px;
-  padding: 0 18px;
-  background-color: var(--el-bg-color);
-  border-bottom: 1px solid var(--el-border-color-lighter);
+.kd-modbar::-webkit-scrollbar {
+  display: none;
 }
 
-.layout__header-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.layout__collapse {
+.kd-modbar__item {
+  padding: 0 14px;
+  border: none;
+  background: transparent;
+  color: rgb(255 255 255 / 82%);
+  font-size: 13px;
+  font-family: inherit;
   cursor: pointer;
-  font-size: 18px;
-  color: var(--el-text-color-regular);
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: background-color 0.15s;
 }
 
-.layout__header-right {
-  display: flex;
-  align-items: center;
+.kd-modbar__item:hover {
+  background-color: rgb(255 255 255 / 12%);
+  color: #fff;
 }
 
-.layout__user {
+.kd-modbar__item.is-active {
+  background-color: #154a8c;
+  color: #fff;
+  border-bottom-color: #ffd04b;
+}
+
+.kd-topbar__right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  padding: 0 12px;
+  flex-shrink: 0;
+  background-color: #154a8c;
+}
+
+.kd-topbar__user {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   cursor: pointer;
+  font-size: 13px;
   outline: none;
 }
 
-.layout__user-name {
+/* ---------- 主体 ---------- */
+.kd-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ---------- 左侧树 ---------- */
+.kd-sidebar {
+  width: 180px;
+  flex-shrink: 0;
+  background-color: #fff;
+  border-right: 1px solid var(--el-border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.kd-sidebar__title {
+  padding: 7px 12px;
   font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  background-color: var(--el-fill-color-light);
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
-.layout__content {
-  padding: 0;
+.kd-sidebar__scroll {
+  flex: 1;
+  min-height: 0;
+}
+
+/* 菜单项：平面化，激活项用左侧色条标识 */
+.kd-sidebar__menu {
+  border-right: none;
+  background-color: transparent;
+}
+
+.kd-sidebar__menu :deep(.el-menu-item),
+.kd-sidebar__menu :deep(.el-sub-menu__title) {
+  height: 30px;
+  line-height: 30px;
+  padding-left: 14px !important;
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  border-right: none;
+  border-left: 2px solid transparent;
+}
+
+.kd-sidebar__menu :deep(.el-menu-item:hover),
+.kd-sidebar__menu :deep(.el-sub-menu__title:hover) {
+  background-color: var(--el-fill-color-light);
+  color: var(--el-color-primary);
+}
+
+.kd-sidebar__menu :deep(.el-menu-item.is-active) {
+  background-color: #e8f0fb;
+  color: var(--el-color-primary);
+  font-weight: 600;
+  border-left-color: var(--el-color-primary);
+}
+
+.kd-sidebar__menu :deep(.el-icon) {
+  font-size: 13px;
+  margin-right: 6px;
+  color: var(--el-text-color-secondary);
+}
+
+/* ---------- 右侧工作区 ---------- */
+.kd-workspace {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   background-color: var(--el-bg-color-page);
-  overflow-y: auto;
 }
+
+/* 工作区页签条 */
+.kd-tabs {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 8px;
+  flex-shrink: 0;
+  background-color: #fff;
+  border-bottom: 1px solid var(--el-border-color);
+}
+
+.kd-tabs__crumb {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kd-tabs__spacer {
+  flex: 1;
+}
+
+.kd-workspace__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
 </style>
-
-
-
-
-
-
-
-

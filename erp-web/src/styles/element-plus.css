@@ -1,58 +1,184 @@
 /* ============================================================
-   Element Plus 主题覆盖
+   Element Plus 主题覆盖 —— 金蝶风格
+
+   设计取向：平面、紧凑、功能优先。
+   - 主色用企业级深蓝，而非鲜艳的亮蓝；
+   - 圆角压到 2px，取消卡片阴影，靠边框分区；
+   - 表格行高压缩到 32px，表头用深灰底白字；
+   - 字号降到 13px，一屏承载更多业务数据。
    ============================================================ */
 
 :root {
-  --el-color-primary: #2563eb;
-  --el-color-primary-light-3: #4f83ee;
-  --el-color-primary-light-5: #7aa4f2;
-  --el-color-primary-light-7: #a5c4f6;
-  --el-color-primary-light-8: #c2d6f9;
-  --el-color-primary-light-9: #e1ebfc;
-  --el-color-primary-dark-2: #1d4fd0;
+  /* 主色：金蝶式的沉稳蓝，压暗以降低塑料感 */
+  --el-color-primary: #1a5fb4;
+  --el-color-primary-light-3: #4a83c4;
+  --el-color-primary-light-5: #7ba3d4;
+  --el-color-primary-light-7: #acc3e4;
+  --el-color-primary-light-8: #c6d5ee;
+  --el-color-primary-light-9: #e4ecf7;
+  --el-color-primary-dark-2: #154d90;
 
-  --el-border-radius-base: 6px;
-  --el-font-size-base: 14px;
+  /* 圆角：接近直角，靠边框而非圆角做视觉分区 */
+  --el-border-radius-base: 2px;
+  --el-border-radius-small: 1px;
+  --el-font-size-base: 13px;
+
+  /* 边框加重，替代阴影承担层次 */
+  --el-border-color: #c9d3e0;
+  --el-border-color-light: #dbe3ec;
+  --el-border-color-lighter: #e6ecf3;
+  --el-border-color-extra-light: #eef2f7;
+
+  /* 页面底色：冷灰，避免纯白的刺眼感 */
+  --el-bg-color-page: #f2f5f9;
+  --el-fill-color-light: #f5f7fa;
+  --el-fill-color-lighter: #f8fafc;
+
+  /* 文字 */
+  --el-text-color-primary: #1f2937;
+  --el-text-color-regular: #4b5563;
+  --el-text-color-secondary: #6b7280;
+
+  /* 表格行高与字号 */
+  --el-table-border-color: #dbe3ec;
+  --el-table-header-text-color: #374151;
+  --el-table-row-hover-bg-color: #eef4fb;
 }
 
-/* 卡片与表格保持一致的圆角与边框 */
+/* ---------- 卡片 ---------- */
+/* 去掉阴影，圆角归零，靠边框形成分区 */
 .el-card {
-  border-radius: 8px;
-  border-color: var(--el-border-color-lighter);
+  border-radius: 0;
+  border-color: var(--el-border-color-light);
+  box-shadow: none;
 }
 
 .el-card__header {
-  padding: 14px 18px;
-  font-weight: 500;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  background-color: var(--el-fill-color-light);
+  border-bottom: 1px solid var(--el-border-color-light);
 }
 
 .el-card__body {
-  padding: 16px 18px;
+  padding: 12px;
+}
+
+/* ---------- 表格 ---------- */
+.el-table {
+  font-size: 13px;
 }
 
 .el-table th.el-table__cell {
-  background-color: var(--el-fill-color-light);
-  font-weight: 500;
+  background-color: #eef1f6;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+  padding: 5px 0;
+}
+
+.el-table td.el-table__cell {
+  padding: 3px 0;
 }
 
 .el-table .cell {
-  line-height: 1.5;
+  line-height: 1.35;
+  padding: 0 8px;
 }
 
-/* 工具栏里的表单项间距紧凑一些 */
+.el-table__inner-wrapper::before {
+  background-color: var(--el-border-color-light);
+}
+
+/* 主数据表统一压缩行高：业务单据一屏要能看到更多行 */
+.el-table .el-table__cell .cell {
+  padding: 0 8px;
+}
+
+.el-table__body tr td.el-table__cell {
+  height: 32px;
+}
+
+/* 树形表格（左侧树形数据）同样压缩 */
+.el-table--tree .el-table__body tr td.el-table__cell {
+  height: 30px;
+}
+
+/* ---------- 表单 ---------- */
+.el-form-item {
+  margin-bottom: 10px;
+}
+
+.el-form-item__label {
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+}
+
+/* ---------- 按钮 ---------- */
+/* 圆角归零，与整体平面风格一致 */
+.el-button {
+  border-radius: 2px;
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--el-color-primary);
+  --el-button-border-color: var(--el-color-primary);
+  --el-button-hover-bg-color: var(--el-color-primary-light-3);
+  --el-button-hover-border-color: var(--el-color-primary-light-3);
+}
+
+/* ---------- 分页 ---------- */
+.el-pagination {
+  --el-pagination-button-bg-color: transparent;
+  font-size: 13px;
+}
+
+/* ---------- 标签 ---------- */
+.el-tag {
+  border-radius: 0;
+}
+
+/* ---------- 对话框 ---------- */
+.el-dialog {
+  border-radius: 2px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+}
+
+.el-dialog__header {
+  padding: 12px 16px;
+  margin-right: 0;
+  border-bottom: 1px solid var(--el-border-color-light);
+  background-color: var(--el-fill-color-light);
+}
+
+.el-dialog__title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.el-dialog__body {
+  padding: 16px;
+}
+
+.el-dialog__footer {
+  padding: 10px 16px;
+  border-top: 1px solid var(--el-border-color-light);
+}
+
+/* ---------- 工具栏里的表单项 ---------- */
 .toolbar-form .el-form-item__label {
   color: var(--el-text-color-regular);
 }
 
-/* 弹窗里的明细表格更紧凑 */
+/* ---------- 弹窗里的明细表格 ---------- */
 .el-dialog .el-table .cell {
-  padding: 0 8px;
+  padding: 0 6px;
 }
 
-
-
-
-
-
-
-
+/* ---------- 输入框 ---------- */
+.el-input__wrapper,
+.el-select__wrapper {
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--el-border-color) inset;
+}
