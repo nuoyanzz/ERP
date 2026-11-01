@@ -6,6 +6,106 @@
 
 ---
 
+## 界面预览
+
+> 以下截图均取自本地运行实例，数据来自真实账簿聚合而非演示桩数据。
+
+### 登录
+
+![登录页](docs/images/00-login.png)
+
+### 工作台
+
+驾驶舱指标全部实时聚合：本期销售额、采购额、库存金额、应收应付余额、在制工单数，以及本年销售趋势、库存金额 TOP、逾期应收 TOP。
+
+![工作台](docs/images/01-dashboard.png)
+
+### 采购订单
+
+单据状态机（暂存 → 已审核）在列表上直接可见，审核动作触发审批流与会计分录。
+
+![采购订单](docs/images/02-purchase-order.png)
+
+### 记账凭证
+
+凭证与业务单据一一对应，价税分离后的借贷分录在此集中呈现。
+
+![记账凭证](docs/images/03-voucher.png)
+
+### 即时库存
+
+按物料 × 仓库 × 批次维护现存量、锁存量与可用量，移动加权平均成本实时结转。
+
+![即时库存](docs/images/04-stock.png)
+
+### 财务报表
+
+资产负债表与利润表同页切换，报表平衡校验即时给出结论。
+
+![财务报表](docs/images/05-financial-report.png)
+
+### 试算平衡
+
+按会计期间生成期初、本期发生额与期末余额，校验借贷是否平衡。
+
+![试算平衡](docs/images/05-trial-balance.png)
+
+### 期初余额
+
+承接存量账套的入口，支持导入与借贷平衡校验。
+
+![期初余额](docs/images/06-opening-balance.png)
+
+### 工作流待办
+
+条件分支、多级审批产生的待办任务，支持同意、驳回、转办、加签与退回。
+
+![工作流待办](docs/images/07-workflow-todo.png)
+
+### MRP 运算
+
+按销售需求计算净需求，可直接投放为采购订单或生产订单。
+
+![MRP 运算](docs/images/08-mrp.png)
+
+### 应收账龄
+
+按账龄区间统计客户未收金额，识别逾期风险。
+
+![应收账龄](docs/images/09-ar-aging.png)
+
+### 生产订单
+
+管理生产订单的下达、领料与完工，工单状态全程可追溯。
+
+![生产订单](docs/images/10-production-order.png)
+
+### 销售订单
+
+管理销售订单的创建、审核与发货。
+
+![销售订单](docs/images/11-sales-order.png)
+
+### 角色与数据权限
+
+角色编码、数据范围与菜单权限集中配置，改完即时生效。
+
+![角色管理](docs/images/12-role-permission.png)
+
+### 采购入库
+
+入库审核即生成价税分离凭证（原材料 / 进项税 / 应付账款）。
+
+![采购入库](docs/images/13-purchase-instock.png)
+
+### 数据字典
+
+状态、类型等枚举收敛到字典表，新增选项无需改代码发版。
+
+![数据字典](docs/images/14-data-dict.png)
+
+---
+
 ## 一、快速启动
 
 ### 1. 环境要求
@@ -45,6 +145,7 @@ mysql -uroot -p erp < src/main/resources/db/migration/V1_1_0__erp_production_rea
 mysql -uroot -p erp < src/main/resources/db/migration/V1_1_1__wf_enhancement.sql
 mysql -uroot -p erp < src/main/resources/db/migration/V1_1_1__pm_enhancement.sql
 mysql -uroot -p erp < src/main/resources/db/migration/V1_1_2__sys_dict.sql
+mysql -uroot -p erp < src/main/resources/db/migration/V1_1_3__sys_serial_no.sql
 
 # 4) 初始化数据（菜单权限、角色、主数据、会计科目、科目映射规则、字典）
 mysql -uroot -p erp < src/main/resources/db/data.sql
@@ -76,7 +177,7 @@ cd erp-server
 bash tools/verify.sh
 ```
 
-脚本依次完成：停止应用 → 重新打包 → 重置数据库并按序执行所有 SQL → 校验实体与表结构一致性 → 启动应用 → 运行 72 项端到端业务验证。
+脚本依次完成：停止应用 → 重新打包 → 重置数据库并按序执行所有 SQL → 校验实体与表结构一致性 → 启动应用 → 运行全部五层业务验证（接口巡检、写路径与业务规则、数据权限隔离、业务链路、工作流），共 331 项断言。
 
 单独验证工作流审批链路（条件分支、多级审批、驳回）：
 
