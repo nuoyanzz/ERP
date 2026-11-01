@@ -204,11 +204,10 @@ java -cp "target/classes;target/test-classes;$(cat target/cp.txt)" \
 mysql -uroot -p erp < erp-server/src/main/resources/db/seed/demo_accounts.sql
 ```
 
-口令统一为 `admin123`。
+导入后可用下列账号登录，口令统一为 `admin123`：
 
 | 账号 | 角色 | 数据范围 | 说明 |
 |------|------|----------|------|
-| admin | 超级管理员 | 全部 | 由 `ERP_ADMIN_PASSWORD` 指定 |
 | purchaser | 采购员 | 本部门 | 采购模块 + 审批 |
 | seller | 销售员 | 本部门 | 销售模块 + 审批 |
 | warehouse | 仓管员 | 本部门及以下 | 库存模块 + 审批 |
