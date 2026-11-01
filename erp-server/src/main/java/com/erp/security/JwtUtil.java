@@ -27,7 +27,15 @@ public class JwtUtil {
     private final JwtProperties properties;
 
     private SecretKey secretKey() {
-        return Keys.hmacShaKeyFor(properties.getSecret().getBytes(StandardCharsets.UTF_8));
+        String secret = properties.getSecret();
+        // 空密钥或过短密钥会让令牌可被伪造，必须在签发前拦截
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("JWT 密钥未配置，请通过 JWT_SECRET 环境变量设置");
+        }
+        if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("JWT 密钥长度不足 32 字节，请通过 JWT_SECRET 环境变量设置足够长的密钥");
+        }
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(Long userId, String username, String nickname, List<String> perms) {

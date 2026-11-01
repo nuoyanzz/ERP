@@ -36,11 +36,6 @@
             </el-button>
           </el-form-item>
         </el-form>
-
-        <div class="login-tip">
-          <el-icon><InfoFilled /></el-icon>
-          <span>默认账号：admin / admin123</span>
-        </div>
       </div>
 
       <div class="login-foot">
@@ -55,15 +50,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import {
-  InfoFilled,
-  Lock,
-  OfficeBuilding,
-  SetUp,
-  ShoppingCart,
-  TrendCharts,
-  User
-} from '@element-plus/icons-vue'
+import { Lock, OfficeBuilding, User } from '@element-plus/icons-vue'
 import { ElMessage, type FormInstance } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 
@@ -73,7 +60,9 @@ const userStore = useUserStore()
 
 const formRef = ref<FormInstance>()
 const loading = ref(false)
-const form = reactive({ username: 'admin', password: 'admin123' })
+// 登录框不预填任何凭据，也不展示默认账号——
+// 管理端凭据由部署方通过初始化脚本配置并单独告知使用者
+const form = reactive({ username: '', password: '' })
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
@@ -100,7 +89,7 @@ const handleLogin = async () => {
 
 <style scoped>
 /* ============================================================
-   登录页 —— 金蝶风格
+   登录页
    平面：顶部品牌条 + 居中表单，无渐变、无装饰圆球
    ============================================================ */
 
@@ -183,16 +172,7 @@ const handleLogin = async () => {
   font-weight: 500;
 }
 
-.login-tip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding-top: 12px;
-  border-top: 1px solid var(--el-border-color-lighter);
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
+
 
 /* ---------- 底部特性 ---------- */
 .login-foot {

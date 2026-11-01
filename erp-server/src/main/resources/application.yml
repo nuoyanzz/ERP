@@ -39,8 +39,9 @@ mybatis-plus:
 jwt:
   header: Authorization
   token-prefix: "Bearer "
-  # 生产环境必须用 JWT_SECRET 环境变量覆盖默认密钥
-  secret: ${JWT_SECRET:erp-management-system-default-jwt-secret-key-2026}
+  # 生产环境必须用 JWT_SECRET 环境变量覆盖默认密钥。
+  # 公开仓库里的固定密钥等同于任何人都能伪造令牌，因此未配置时拒绝启动。
+  secret: ${JWT_SECRET:}
   expire-hours: 24
   refresh-expire-days: 7
   # 登录失败锁定策略
@@ -50,6 +51,13 @@ jwt:
   password-min-length: 8
   password-expire-days: 90
   password-require-complexity: true
+
+# 初始管理员账号
+# 口令不设默认值——公开可知的默认口令等于把超级管理员权限送出去。
+# 未配置 ERP_ADMIN_PASSWORD 时不自动建号，需部署方自行创建。
+erp:
+  admin:
+    password: ${ERP_ADMIN_PASSWORD:}
 
 springdoc:
   swagger-ui:
