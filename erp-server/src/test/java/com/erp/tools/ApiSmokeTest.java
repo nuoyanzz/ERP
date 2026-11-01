@@ -36,8 +36,8 @@ public final class ApiSmokeTest {
         System.out.println("================ 全量接口巡检 ================\n");
 
         // 登录两个不同权限的账号，用于越权检测
-        adminToken = login("admin", "admin123");
-        sellerToken = login("seller", "admin123");
+        adminToken = login("admin", TestCredentials.ADMIN_PASSWORD);
+        sellerToken = login("seller", TestCredentials.DEMO_PASSWORD);
         if (adminToken == null) {
             System.out.println("管理员登录失败，终止");
             System.exit(1);

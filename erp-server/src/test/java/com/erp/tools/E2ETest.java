@@ -24,7 +24,7 @@ public final class E2ETest {
         System.out.println("================ ERP 端到端业务流程验证 ================\n");
 
         step("1. 管理员登录", () -> {
-            String resp = post("/auth/login", "{\"username\":\"admin\",\"password\":\"admin123\"}");
+            String resp = post("/auth/login", "{\"username\":\"admin\",\"password\":\"" + TestCredentials.ADMIN_PASSWORD + "\"}");
             token = extract(resp, "\"token\":\"([^\"]+)\"");
             require(token != null, "登录未返回 token");
             check(resp.contains("\"code\":200"), "登录失败: " + brief(resp));
@@ -238,7 +238,7 @@ public final class E2ETest {
 
         step("23. 权限控制（非管理员无权访问）", () -> {
             // 用一个只有极少权限的角色登录
-            String resp = post("/auth/login", "{\"username\":\"admin\",\"password\":\"admin123\"}");
+            String resp = post("/auth/login", "{\"username\":\"admin\",\"password\":\"" + TestCredentials.ADMIN_PASSWORD + "\"}");
             check(resp.contains("\"code\":200"), "登录失败");
             return "管理员权限正常";
         });

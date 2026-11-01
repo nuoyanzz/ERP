@@ -26,9 +26,9 @@ public final class DataScopeIsolationTest {
     public static void main(String[] args) throws Exception {
         System.out.println("================ 数据权限隔离验证 ================\n");
 
-        String admin = login("admin", "admin123");
-        String purchaser = login("purchaser", "admin123");
-        String seller = login("seller", "admin123");
+        String admin = login("admin", TestCredentials.ADMIN_PASSWORD);
+        String purchaser = login("purchaser", TestCredentials.DEMO_PASSWORD);
+        String seller = login("seller", TestCredentials.DEMO_PASSWORD);
         require(admin != null && purchaser != null && seller != null, "账号登录失败");
         System.out.println("三个账号登录成功\n");
 
@@ -98,7 +98,7 @@ public final class DataScopeIsolationTest {
 
         // 同模块、不同部门的两个采购员，验证「本部门」数据范围真的生效
         step("9. 另建一个生产部的采购员账号", () -> {
-            String resp = post("/sys/user", "{\"username\":\"purchaser2\",\"password\":\"admin123\","
+            String resp = post("/sys/user", "{\"username\":\"purchaser2\",\"password\":\"" + TestCredentials.DEMO_PASSWORD + "\","
                     + "\"nickname\":\"生产部采购员\",\"deptId\":96015,\"status\":0,\"roleIds\":[3]}", admin);
             require(resp.contains("\"code\":200"), "创建用户失败: " + brief(resp));
             String id = extract(resp, "\"data\":(\\d+)");
@@ -108,7 +108,7 @@ public final class DataScopeIsolationTest {
         });
 
         step("10. 生产部采购员登录", () -> {
-            String token = login("purchaser2", "admin123");
+            String token = login("purchaser2", TestCredentials.DEMO_PASSWORD);
             require(token != null, "新账号登录失败");
             otherPurchaserToken = token;
             return "登录成功";

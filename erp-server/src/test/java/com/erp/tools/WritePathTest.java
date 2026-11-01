@@ -27,7 +27,7 @@ public final class WritePathTest {
     public static void main(String[] args) throws Exception {
         System.out.println("================ 写路径与业务规则验证 ================\n");
 
-        token = login("admin", "admin123");
+        token = login("admin", TestCredentials.ADMIN_PASSWORD);
         if (token == null) {
             System.out.println("登录失败，终止");
             System.exit(1);
@@ -171,7 +171,7 @@ public final class WritePathTest {
 
         // ---- 数据权限：售货员看不到采购数据 ----
         step("15. 数据权限隔离", () -> {
-            String sellerToken = login("seller", "admin123");
+            String sellerToken = login("seller", TestCredentials.DEMO_PASSWORD);
             require(sellerToken != null, "售货员登录失败");
             String resp = getWithToken("/pa/order/page?pageNum=1&pageSize=5", sellerToken);
             require(resp.contains("\"code\":403"), "售货员访问采购订单未被拦截: " + brief(resp));

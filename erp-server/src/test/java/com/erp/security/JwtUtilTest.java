@@ -1,6 +1,8 @@
 package com.erp.security;
 
 import io.jsonwebtoken.Claims;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -9,10 +11,21 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JwtUtilTest {
 
-    private final JwtUtil jwtUtil = new JwtUtil(new JwtProperties());
+    /** 测试专用密钥，长度满足 HS256 的下限要求 */
+    private static final String TEST_SECRET = "unit-test-jwt-secret-key-at-least-32-bytes-long";
+
+    private JwtUtil jwtUtil;
+
+    @BeforeEach
+    void setUp() {
+        JwtProperties properties = new JwtProperties();
+        properties.setSecret(TEST_SECRET);
+        jwtUtil = new JwtUtil(properties);
+    }
 
     @Test
     void generateAndParseToken() {
@@ -31,12 +44,24 @@ class JwtUtilTest {
     void parseInvalidTokenThrows() {
         assertThrows(Exception.class, () -> jwtUtil.parseToken("invalid.token.value"));
     }
+
+    @Test
+    @DisplayName("未配置密钥时拒绝签发令牌")
+    void missingSecretRejected() {
+        JwtUtil noSecret = new JwtUtil(new JwtProperties());
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> noSecret.generateToken(1L, "admin", "管理员", List.of()));
+        assertTrue(error.getMessage().contains("JWT 密钥未配置"));
+    }
+
+    @Test
+    @DisplayName("密钥长度不足时拒绝签发令牌")
+    void shortSecretRejected() {
+        JwtProperties properties = new JwtProperties();
+        properties.setSecret("too-short");
+        JwtUtil shortSecret = new JwtUtil(properties);
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> shortSecret.generateToken(1L, "admin", "管理员", List.of()));
+        assertTrue(error.getMessage().contains("长度不足"));
+    }
 }
-
-
-
-
-
-
-
-

@@ -21,6 +21,11 @@ DB_URL="jdbc:mysql://localhost:3306/erp?useUnicode=true&characterEncoding=utf8&u
 DB_USER=${DB_USERNAME:-root}
 DB_PASS=${DB_PASSWORD:-your_password}
 
+# JWT 密钥与初始管理员口令由环境变量注入，代码与初始化脚本里没有公开默认值。
+# 导出后既供应用启动使用，也供后续验证工具读取（测试从 ERP_ADMIN_PASSWORD 取口令）。
+export JWT_SECRET=${JWT_SECRET:-verify-only-jwt-secret-key-at-least-32-bytes-long}
+export ERP_ADMIN_PASSWORD=${ERP_ADMIN_PASSWORD:-Verify@123456}
+
 TOTAL_PASS=0
 TOTAL_FAIL=0
 FAILED_SUITES=""
@@ -89,7 +94,8 @@ for f in src/main/resources/db/schema.sql \
          src/main/resources/db/migration/V1_1_1__pm_enhancement.sql \
          src/main/resources/db/migration/V1_1_2__sys_dict.sql \
          src/main/resources/db/migration/V1_1_3__sys_serial_no.sql \
-         src/main/resources/db/data.sql; do
+         src/main/resources/db/data.sql \
+         src/main/resources/db/seed/demo_accounts.sql; do
   RESULT=$(java -cp "$CP" com.erp.tools.SqlRunner "$DB_URL" "$DB_USER" "$DB_PASS" "$f" 2>&1 | grep -E "^OK=" || echo "OK=0 FAILED=1")
   echo "  $(basename "$f"): $RESULT"
   echo "$RESULT" | grep -q "FAILED=0" || { echo "初始化失败：$f"; exit 1; }

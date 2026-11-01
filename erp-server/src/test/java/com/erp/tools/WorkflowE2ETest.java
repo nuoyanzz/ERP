@@ -25,21 +25,21 @@ public final class WorkflowE2ETest {
         final String[] tokens = new String[3];
 
         step("1. 采购员登录", () -> {
-            String resp = post("/auth/login", "{\"username\":\"purchaser\",\"password\":\"admin123\"}");
+            String resp = post("/auth/login", "{\"username\":\"purchaser\",\"password\":\"" + TestCredentials.DEMO_PASSWORD + "\"}");
             tokens[0] = extract(resp, "\"token\":\"([^\"]+)\"");
             require(tokens[0] != null, "采购员登录失败: " + brief(resp));
             return "token 长度 " + tokens[0].length();
         });
 
         step("2. 财务主管登录", () -> {
-            String resp = post("/auth/login", "{\"username\":\"finance\",\"password\":\"admin123\"}");
+            String resp = post("/auth/login", "{\"username\":\"finance\",\"password\":\"" + TestCredentials.DEMO_PASSWORD + "\"}");
             tokens[1] = extract(resp, "\"token\":\"([^\"]+)\"");
             require(tokens[1] != null, "财务主管登录失败: " + brief(resp));
             return "token 长度 " + tokens[1].length();
         });
 
         step("2b. 管理员登录（用于跨模块核对单据状态）", () -> {
-            String resp = post("/auth/login", "{\"username\":\"admin\",\"password\":\"admin123\"}");
+            String resp = post("/auth/login", "{\"username\":\"admin\",\"password\":\"" + TestCredentials.ADMIN_PASSWORD + "\"}");
             tokens[2] = extract(resp, "\"token\":\"([^\"]+)\"");
             require(tokens[2] != null, "管理员登录失败: " + brief(resp));
             return "token 长度 " + tokens[2].length();
